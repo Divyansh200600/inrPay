@@ -1,57 +1,139 @@
 import React, { useState } from 'react';
-import { auth } from '../../utils/FireBaseConfig/fireBaseConfig'; // Import auth from firebaseConfig
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth'; // Import signInWithEmailAndPassword and createUserWithEmailAndPassword functions
-import { ToastContainer, toast } from 'react-toastify'; // Import ToastContainer and toast from react-toastify
-import 'react-toastify/dist/ReactToastify.css'; // Import the CSS for toast notifications
+import { auth, firestore } from '../../utils/FireBaseConfig/fireBaseConfig';
+import { collection,getDoc, doc, setDoc } from 'firebase/firestore';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import Button from '@mui/material/Button';
+import { Typography } from '@mui/material';
+import { TextField, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+
 
 const LoginForm = () => {
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
-  const [userType, setUserType] = useState('buyer'); // Default user type is 'buyer'
-  const [isLogin, setIsLogin] = useState(true); // State to manage whether to show login or signup form
-console.log(userType);
-console.log(setUserType);
+  const [signupUsername, setSignupUsername] = useState('');
+  const [userType, setUserType] = useState('buyer');
+  const [isLogin, setIsLogin] = useState(true);
 
   const handleLogin = async () => {
     try {
-      await signInWithEmailAndPassword(auth, loginEmail, loginPassword); // Use signInWithEmailAndPassword function
-      toast.success('Login successful'); // Display success toast
-      // Redirect user or perform other actions upon successful login
+      const { user } = await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
+      
+      // Retrieve user type from Firestore
+      const userDoc = await getDoc(doc(firestore, 'users', user.uid));
+      const userData = userDoc.data();
+      const userType = userData ? userData.userType : null;
+  
+      // Check if user type matches login attempt
+      if ((userType === 'buyer' && isBuyerLogin()) || (userType === 'seller' && !isBuyerLogin())) {
+        toast.success('Login successful');
+      } else {
+        throw new Error(`You are logged in as a ${isBuyerLogin() ? 'seller' : 'buyer'}. Please log in as a ${userType}.`);
+      }
     } catch (error) {
-      toast.error(`Login error: ${error.message}`); // Display error toast
+      toast.error(`Login error: ${error.message}`);
     }
   };
+  
+  
+  const isBuyerLogin = () => {
+    // Implement logic to determine if the login attempt is for a buyer
+    return userType === 'buyer'; // Assuming userType is accessible here
+  };
+  
 
   const handleSignup = async () => {
     try {
-      await createUserWithEmailAndPassword(auth, signupEmail, signupPassword); // Use createUserWithEmailAndPassword function
-      toast.success('Signup successful'); // Display success toast
-      setIsLogin(true); // After successful signup, switch back to login form
+      // Create user in Firebase Authentication
+      const userCredential = await createUserWithEmailAndPassword(auth, signupEmail, signupPassword);
+      const user = userCredential.user;
+  
+      // Save additional user details in Firestore
+      await setDoc(doc(firestore, 'users', user.uid), {
+        email: signupEmail,
+        username: signupUsername,
+        userType: userType,
+      });
+  
+      toast.success('Signup successful');
+      setIsLogin(true);
     } catch (error) {
-      toast.error(`Signup error: ${error.message}`); // Display error toast
+      toast.error(`Signup error: ${error.message}`);
     }
   };
 
   return (
     <div style={containerStyle}>
-      <ToastContainer /> {/* Add ToastContainer component */}
       <div style={formContainerStyle}>
-        <h2>{isLogin ? 'Login' : 'Signup'}</h2>
+        <ToastContainer />
+        <Typography variant="h4" align="center" gutterBottom>{isLogin ? 'Login' : 'Signup'}</Typography>
+        <div style={{ marginBottom: '10px' }}>
+          <InputLabel htmlFor="user-type" style={{ marginBottom: '5px', display: 'block' }}>User Type</InputLabel>
+          <FormControl fullWidth variant="outlined">
+            <Select
+              id="user-type"
+              value={userType}
+              onChange={(e) => setUserType(e.target.value)}
+            >
+              <MenuItem value="buyer">Buyer</MenuItem>
+              <MenuItem value="seller">Seller</MenuItem>
+            </Select>
+          </FormControl>
+        </div>
         {isLogin ? (
           <>
-            <input type="email" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} placeholder="Enter your email" style={inputStyle} />
-            <input type="password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} placeholder="Enter your password" style={inputStyle} />
-            <button onClick={handleLogin} style={buttonStyle}>Login</button>
-            <p>Don't have an account? <span style={linkStyle} onClick={() => setIsLogin(false)}>Signup</span></p>
+            <TextField
+              label="Email"
+              variant="outlined"
+              fullWidth
+              margin="normal"
+              value={loginEmail}
+              onChange={(e) => setLoginEmail(e.target.value)}
+            />
+            <TextField
+              label="Password"
+              variant="outlined"
+              fullWidth
+              margin="normal"
+              type="password"
+              value={loginPassword}
+              onChange={(e) => setLoginPassword(e.target.value)}
+            />
+            <Button variant="contained" color="primary" fullWidth onClick={handleLogin}>Login</Button>
+            <Typography align="center" variant="body2" gutterBottom>Don't have an account? <span style={switchLinkStyle} onClick={() => setIsLogin(false)}>Signup</span></Typography>
           </>
         ) : (
           <>
-            <input type="email" value={signupEmail} onChange={(e) => setSignupEmail(e.target.value)} placeholder="Enter your email" style={inputStyle} />
-            <input type="password" value={signupPassword} onChange={(e) => setSignupPassword(e.target.value)} placeholder="Enter your password" style={inputStyle} />
-            <button onClick={handleSignup} style={buttonStyle}>Signup</button>
-            <p>Already have an account? <span style={linkStyle} onClick={() => setIsLogin(true)}>Login</span></p>
+            <TextField
+              label="Email"
+              variant="outlined"
+              fullWidth
+              margin="normal"
+              value={signupEmail}
+              onChange={(e) => setSignupEmail(e.target.value)}
+            />
+            <TextField
+              label="Password"
+              variant="outlined"
+              fullWidth
+              margin="normal"
+              type="password"
+              value={signupPassword}
+              onChange={(e) => setSignupPassword(e.target.value)}
+            />
+            <TextField
+              label="Username"
+              variant="outlined"
+              fullWidth
+              margin="normal"
+              value={signupUsername}
+              onChange={(e) => setSignupUsername(e.target.value)}
+            />
+            <Button variant="contained" color="primary" fullWidth onClick={handleSignup}>Signup</Button>
+            <Typography align="center" variant="body2" gutterBottom>Already have an account? <span style={switchLinkStyle} onClick={() => setIsLogin(true)}>Login</span></Typography>
           </>
         )}
       </div>
@@ -64,39 +146,17 @@ const containerStyle = {
   justifyContent: 'center',
   alignItems: 'center',
   height: '100vh',
-  background: `linear-gradient(135deg, #ff9933 25%, #fff 25%, #fff 50%, #128807 50%, #128807 75%, #fff 75%, #fff)`,
-  backgroundSize: '30px 30px',
 };
 
 const formContainerStyle = {
   width: '300px',
   padding: '20px',
-  backgroundColor: '#fff',
+  backgroundColor: '#f5f5f5',
   borderRadius: '10px',
-  boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)',
-  transition: 'transform 0.5s ease-in-out',
-  transformStyle: 'preserve-3d',
+  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
 };
 
-const inputStyle = {
-  width: '100%',
-  marginBottom: '10px',
-  padding: '10px',
-  border: '1px solid #ccc',
-  borderRadius: '5px',
-};
-
-const buttonStyle = {
-  width: '100%',
-  padding: '10px',
-  border: 'none',
-  borderRadius: '5px',
-  backgroundColor: '#007bff',
-  color: '#fff',
-  cursor: 'pointer',
-};
-
-const linkStyle = {
+const switchLinkStyle = {
   color: '#007bff',
   cursor: 'pointer',
 };
