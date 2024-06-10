@@ -1,31 +1,46 @@
-import React, { useState } from "react";
-import { BrowserRouter as Router, Routes, Route,Navigate } from "react-router-dom"; // Import Routes
+// src/App.js
+import React from "react";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "./utils/Auth/AuthContext";
 import LoginForm from "./pages/LoginFormPage/loginFormPage";
 import BuyerDbPage from "./pages/BuyerDbPage/buyerDbPage";
 import SellerDbPage from "./pages/SellerDbPage/sellerDbPage";
-function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userType, setUserType] = useState("");
+import ProtectedRoute from "./utils/ProtectedRoute/ProtectedRoute";
 
-  const handleLogin = (userType) => {
-    setIsLoggedIn(true);
-    setUserType(userType);
-  };
-
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    setUserType("");
-  };
+const AppRoutes = () => {
+  const { isLoggedIn, userType } = useAuth();
 
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={isLoggedIn ? <Navigate to={`/${userType}`} /> : <Navigate to="/login" />} />
-        <Route path="/login" element={<LoginForm isLoggedIn={isLoggedIn} onLogin={handleLogin} />} />
-        <Route path="/buyer" element={isLoggedIn && userType === "buyer" ? <BuyerDbPage onLogout={handleLogout} /> : <Navigate to="/login" />} />
-        <Route path="/seller" element={isLoggedIn && userType === "seller" ? <SellerDbPage onLogout={handleLogout} /> : <Navigate to="/login" />} />
-      </Routes>
-    </Router>
+    <Routes>
+      <Route path="/" element={isLoggedIn ? <Navigate to={`/${userType}`} /> : <Navigate to="/login" />} />
+      <Route path="/login" element={isLoggedIn ? <Navigate to={`/${userType}`} /> : <LoginForm />} />
+      <Route 
+        path="/buyer" 
+        element={
+          <ProtectedRoute>
+            <BuyerDbPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route 
+        path="/seller" 
+        element={
+          <ProtectedRoute>
+            <SellerDbPage />
+          </ProtectedRoute>
+        }
+      />
+    </Routes>
+  );
+};
+
+function App() {
+  return (
+    <AuthProvider>
+      <Router>
+        <AppRoutes />
+      </Router>
+    </AuthProvider>
   );
 }
 

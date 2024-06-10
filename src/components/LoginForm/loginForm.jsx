@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import { auth, firestore } from '../../utils/FireBaseConfig/fireBaseConfig';
-import { collection,getDoc, doc, setDoc } from 'firebase/firestore';
+import { getDoc, doc, setDoc } from 'firebase/firestore';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Button from '@mui/material/Button';
 import { Typography } from '@mui/material';
 import { TextField, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
-
+import { useAuth } from '../../utils/Auth/AuthContext'; // Import useAuth
 
 const LoginForm = () => {
   const [loginEmail, setLoginEmail] = useState('');
@@ -17,6 +18,8 @@ const LoginForm = () => {
   const [signupUsername, setSignupUsername] = useState('');
   const [userType, setUserType] = useState('buyer');
   const [isLogin, setIsLogin] = useState(true);
+  const { login } = useAuth(); // Use login from AuthContext
+  const navigate = useNavigate(); // Initialize useNavigate
 
   const handleLogin = async () => {
     try {
@@ -25,25 +28,24 @@ const LoginForm = () => {
       // Retrieve user type from Firestore
       const userDoc = await getDoc(doc(firestore, 'users', user.uid));
       const userData = userDoc.data();
-      const userType = userData ? userData.userType : null;
+      const loggedInUserType = userData ? userData.userType : null;
   
       // Check if user type matches login attempt
-      if ((userType === 'buyer' && isBuyerLogin()) || (userType === 'seller' && !isBuyerLogin())) {
+      if ((loggedInUserType === 'buyer' && isBuyerLogin()) || (loggedInUserType === 'seller' && !isBuyerLogin())) {
         toast.success('Login successful');
+        login(loggedInUserType); // Call login function from AuthContext
+        navigate(`/${loggedInUserType}`); // Navigate to the user type page
       } else {
-        throw new Error(`You are logged in as a ${isBuyerLogin() ? 'seller' : 'buyer'}. Please log in as a ${userType}.`);
+        throw new Error(`You are logged in as a ${isBuyerLogin() ? 'seller' : 'buyer'}. Please log in as a ${loggedInUserType}.`);
       }
     } catch (error) {
       toast.error(`Login error: ${error.message}`);
     }
   };
   
-  
   const isBuyerLogin = () => {
-    // Implement logic to determine if the login attempt is for a buyer
-    return userType === 'buyer'; // Assuming userType is accessible here
+    return userType === 'buyer'; // Determine if the login attempt is for a buyer
   };
-  
 
   const handleSignup = async () => {
     try {

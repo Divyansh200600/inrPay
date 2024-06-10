@@ -1,13 +1,26 @@
-import React from "react";
+// src/pages/BuyerDbPage/buyerDbPage.jsx
+import React from 'react';
+import { useAuth } from '../../utils/Auth/AuthContext';
+import Button from '@mui/material/Button';
+import { useNavigate } from 'react-router-dom';
 
-const BuyerDb = () => {
+const BuyerDbPage = () => {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
 
-    return(
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
+  return (
     <div>
-       <h1>Hello Buyer</h1>
+      <h1>Buyer Dashboard</h1>
+      <Button variant="contained" color="primary" onClick={handleLogout}>
+        Logout
+      </Button>
     </div>
-    )
-}
+  );
+};
 
-export default BuyerDb;
+export default BuyerDbPage;
