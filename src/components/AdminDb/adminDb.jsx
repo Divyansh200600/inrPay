@@ -130,7 +130,7 @@ const AdminDb = () => {
         <Toolbar />
         <Box sx={{ overflow: 'auto' }}>
           <List>
-            {['Dashboard'].map((text, index) => (
+            {['Dashboard', 'Proposal History'].map((text, index) => (
               <ListItem button key={text}>
                 <ListItemIcon>
                   {index % 2 === 0 ? <HomeIcon /> : <ExitToAppIcon />}

@@ -187,37 +187,45 @@ const Verified = () => {
               margin="normal"
             />
             <TextField
-              label="Seller's Limit (USD)"
-              name="limit"
+              label="Seller's Limit ($)"
+              name="limit" // Update label to "$"
               value={formData.limit}
               onChange={handleChange}
               fullWidth
               margin="normal"
             />
+           
             <Box mt={2}>
-              <Typography variant="h6">Upload Documents</Typography>
-              <input
-                type="file"
-                name="aadhar"
-                onChange={handleFileChange}
-                accept=".pdf,.jpg,.jpeg,.png"
-                style={{ marginTop: '10px' }}
-              />
-             
-             <input
-                type="file"
-                name="pan"
-                onChange={handleFileChange}
-                accept=".pdf,.jpg,.jpeg,.png"
-                style={{ marginTop: '10px' }}
-              />
-              <input
-                type="file"
-                name="photo"
-                onChange={handleFileChange}
-                accept=".jpg,.jpeg,.png"
-                style={{ marginTop: '10px' }}
-              />
+              <Button variant="contained" color="primary" component="label">
+                Upload Aadhar
+                <input
+                  type="file"
+                  name="aadhar"
+                  onChange={handleFileChange}
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  style={{ display: 'none' }}
+                />
+              </Button>
+              <Button variant="contained" color="primary" component="label" style={{ marginLeft: '10px' }}>
+                Upload PAN
+                <input
+                  type="file"
+                  name="pan"
+                  onChange={handleFileChange}
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  style={{ display: 'none' }}
+                />
+              </Button>
+              <Button variant="contained" color="primary" component="label" style={{ marginLeft: '10px' }}>
+                Upload Photo
+                <input
+                  type="file"
+                  name="photo"
+                  onChange={handleFileChange}
+                  accept=".jpg,.jpeg,.png"
+                  style={{ display: 'none' }}
+                />
+              </Button>
             </Box>
             <Button variant="contained" color="primary" type="submit" sx={{ mt: 3 }}>
               Submit
