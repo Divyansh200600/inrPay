@@ -41,6 +41,7 @@ const SellerDb = () => {
       opacity: 1;
     }
   `;
+  
 
   const renderContent = () => {
     switch (selectedCategory) {

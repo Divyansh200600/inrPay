@@ -6,6 +6,7 @@ import LoginForm from "./pages/LoginFormPage/loginFormPage";
 import BuyerDbPage from "./pages/BuyerDbPage/buyerDbPage";
 import SellerDbPage from "./pages/SellerDbPage/sellerDbPage";
 import ProtectedRoute from "./utils/ProtectedRoute/ProtectedRoute";
+import AdminPage from "./pages/Admin/adminPage";
 
 const AppRoutes = () => {
   const { isLoggedIn, userType } = useAuth();
@@ -33,7 +34,16 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+       <Route
+        path="/admin/*"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <AdminPage />
+          </ProtectedRoute>
+        }
+      />
     </Routes>
+    
   );
 };
 

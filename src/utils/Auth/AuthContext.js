@@ -22,6 +22,12 @@ export const AuthProvider = ({ children }) => {
     return unsubscribe;
   }, []);
 
+  useEffect(() => {
+    // Update localStorage when isLoggedIn or userType changes
+    localStorage.setItem('isLoggedIn', isLoggedIn);
+    localStorage.setItem('userType', userType);
+  }, [isLoggedIn, userType]);
+
   const login = (userType) => {
     setIsLoggedIn(true);
     setUserType(userType);
@@ -32,7 +38,7 @@ export const AuthProvider = ({ children }) => {
     setUserType("");
     localStorage.removeItem('isLoggedIn');
     localStorage.removeItem('userType');
-    auth.signOut(); // Add this line to sign out the user from Firebase authentication
+    auth.signOut(); // Sign out the user from Firebase authentication
   };
 
   return (
