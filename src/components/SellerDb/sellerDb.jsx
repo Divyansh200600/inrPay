@@ -8,8 +8,14 @@ import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import { keyframes } from '@emotion/react';
+
+
+//all features
 import Verified from './features/Verified';  
 import ManageDeal from './features/manageDeal';
+import NewDeal from './features/newDeal';
+import Help from './features/help';
+import Contact from './features/contact';
 
 const SellerDb = () => {
   const { logout } = useAuth();
@@ -22,8 +28,9 @@ const SellerDb = () => {
   };
 
   const sellerOptions = [
+     { name: 'New Deal' },
     { name: 'Manage Deal' },
-    { name: 'New Deal' },
+   
     { name: 'Verified' },
     { name: 'Help' },
     { name: 'Contact' },
@@ -51,10 +58,7 @@ const SellerDb = () => {
         );
       case 'New Deal':
         return (
-          <Paper elevation={5} style={{ padding: '20px', margin: '10px', width: '90%', backgroundColor: '#2ECC40', color: '#ffffff' }}>
-            <Typography variant="h6" gutterBottom>New Deal</Typography>
-            <Typography variant="body1">Content for new deals...</Typography>
-          </Paper>
+          <NewDeal />
         );
       case 'Verified':
         return (
@@ -62,17 +66,11 @@ const SellerDb = () => {
         );
       case 'Help':
         return (
-          <Paper elevation={5} style={{ padding: '20px', margin: '10px', width: '90%', backgroundColor: '#FF851B', color: '#ffffff' }}>
-            <Typography variant="h6" gutterBottom>Help</Typography>
-            <Typography variant="body1">Help content...</Typography>
-          </Paper>
+         <Help/>
         );
       case 'Contact':
         return (
-          <Paper elevation={5} style={{ padding: '20px', margin: '10px', width: '90%', backgroundColor: '#FFDC00', color: '#000000' }}>
-            <Typography variant="h6" gutterBottom>Contact</Typography>
-            <Typography variant="body1">Contact content...</Typography>
-          </Paper>
+          <Contact/>
         );
       default:
         return (

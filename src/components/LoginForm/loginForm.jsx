@@ -6,8 +6,7 @@ import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'fire
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Button from '@mui/material/Button';
-import { Typography } from '@mui/material';
-import { TextField, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import { Typography, TextField, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import { useAuth } from '../../utils/Auth/AuthContext';
 
 const LoginForm = () => {
@@ -18,6 +17,8 @@ const LoginForm = () => {
   const [signupUsername, setSignupUsername] = useState('');
   const [userType, setUserType] = useState('buyer');
   const [isLogin, setIsLogin] = useState(true);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -75,21 +76,30 @@ const LoginForm = () => {
               value={loginEmail}
               onChange={(e) => setLoginEmail(e.target.value)}
             />
-            <TextField
-              label="Password"
-              variant="outlined"
-              fullWidth
-              margin="normal"
-              type="password"
-              value={loginPassword}
-              onChange={(e) => setLoginPassword(e.target.value)}
-            />
+            <div style={{ position: 'relative', marginBottom: '1rem' }}>
+              <TextField
+                label="Password"
+                variant="outlined"
+                fullWidth
+                margin="normal"
+                type={showLoginPassword ? 'text' : 'password'}
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+              />
+              <button
+                type="button"
+                onClick={() => setShowLoginPassword(!showLoginPassword)}
+                style={eyeButtonStyle}
+              >
+                {showLoginPassword ? '🙈' : '👁️'}
+              </button>
+            </div>
             <Button variant="contained" color="primary" fullWidth onClick={handleLogin}>Login</Button>
             <Typography align="center" variant="body2" gutterBottom>Don't have an account? <span style={switchLinkStyle} onClick={() => setIsLogin(false)}>Signup</span></Typography>
           </>
         ) : (
           <>
-           <div style={{ marginBottom: '10px' }}>
+            <div style={{ marginBottom: '10px' }}>
               <InputLabel htmlFor="user-type" style={{ marginBottom: '5px', display: 'block' }}>User Type</InputLabel>
               <FormControl fullWidth variant="outlined">
                 <Select
@@ -110,7 +120,6 @@ const LoginForm = () => {
               value={signupUsername}
               onChange={(e) => setSignupUsername(e.target.value)}
             />
-           
             <TextField
               label="Email"
               variant="outlined"
@@ -119,16 +128,24 @@ const LoginForm = () => {
               value={signupEmail}
               onChange={(e) => setSignupEmail(e.target.value)}
             />
-            <TextField
-              label="Password"
-              variant="outlined"
-              fullWidth
-              margin="normal"
-              type="password"
-              value={signupPassword}
-              onChange={(e) => setSignupPassword(e.target.value)}
-            />
-           
+            <div style={{ position: 'relative', marginBottom: '1rem' }}>
+              <TextField
+                label="Password"
+                variant="outlined"
+                fullWidth
+                margin="normal"
+                type={showSignupPassword ? 'text' : 'password'}
+                value={signupPassword}
+                onChange={(e) => setSignupPassword(e.target.value)}
+              />
+              <button
+                type="button"
+                onClick={() => setShowSignupPassword(!showSignupPassword)}
+                style={eyeButtonStyle}
+              >
+                {showSignupPassword ? '🙈' : '👁️'}
+              </button>
+            </div>
             <Button variant="contained" color="primary" fullWidth onClick={handleSignup}>Signup</Button>
             <Typography align="center" variant="body2" gutterBottom>Already have an account? <span style={switchLinkStyle} onClick={() => setIsLogin(true)}>Login</span></Typography>
           </>
@@ -155,6 +172,16 @@ const formContainerStyle = {
 
 const switchLinkStyle = {
   color: '#007bff',
+  cursor: 'pointer',
+};
+
+const eyeButtonStyle = {
+  position: 'absolute',
+  top: '50%',
+  right: '10px',
+  transform: 'translateY(-50%)',
+  background: 'none',
+  border: 'none',
   cursor: 'pointer',
 };
 
