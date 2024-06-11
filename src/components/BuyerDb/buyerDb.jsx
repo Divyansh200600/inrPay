@@ -1,19 +1,19 @@
-import React, { useState } from 'react';
-import { useAuth } from '../../utils/Auth/AuthContext';
+import { keyframes } from '@emotion/react';
+import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import { useNavigate } from 'react-router-dom';
-import Sidebar from './sidebar'; // Make sure to import the Sidebar component
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
-import { keyframes } from '@emotion/react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../utils/Auth/AuthContext';
+import Sidebar from './sidebar'; // Make sure to import the Sidebar component
 // Import the necessary features/components
+import C2C from './features/C2C';
 import C2I from './features/C2I';
 import I2C from './features/I2C';
-import C2C from './features/C2C';
-import PAYAPP from './features/payApp';
-import Help from './features/help';
 import Contact from './features/contact';
+import Help from './features/help';
+import PAYAPP from './features/payApp';
 
 const BuyerDb = () => {
   const { logout } = useAuth();
