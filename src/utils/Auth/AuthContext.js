@@ -1,9 +1,10 @@
-// src/utils/Auth/AuthContext.js
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import { auth } from '../FireBaseConfig/fireBaseConfig';
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
+  const [currentUser, setCurrentUser] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     const savedIsLoggedIn = localStorage.getItem('isLoggedIn');
     return savedIsLoggedIn ? JSON.parse(savedIsLoggedIn) : false;
@@ -14,9 +15,12 @@ export const AuthProvider = ({ children }) => {
   });
 
   useEffect(() => {
-    localStorage.setItem('isLoggedIn', JSON.stringify(isLoggedIn));
-    localStorage.setItem('userType', userType);
-  }, [isLoggedIn, userType]);
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      setCurrentUser(user);
+    });
+
+    return unsubscribe;
+  }, []);
 
   const login = (userType) => {
     setIsLoggedIn(true);
@@ -28,10 +32,11 @@ export const AuthProvider = ({ children }) => {
     setUserType("");
     localStorage.removeItem('isLoggedIn');
     localStorage.removeItem('userType');
+    auth.signOut(); // Add this line to sign out the user from Firebase authentication
   };
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, userType, login, logout }}>
+    <AuthContext.Provider value={{ currentUser, isLoggedIn, userType, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

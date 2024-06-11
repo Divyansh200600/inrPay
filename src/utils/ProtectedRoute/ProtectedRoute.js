@@ -3,10 +3,19 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../Auth/AuthContext';
 
-const ProtectedRoute = ({ children }) => {
-  const { isLoggedIn } = useAuth();
+const ProtectedRoute = ({ allowedRoles, children }) => {
+  const { isLoggedIn, userType } = useAuth();
 
-  return isLoggedIn ? children : <Navigate to="/login" />;
+  if (!isLoggedIn) {
+    return <Navigate to="/login" />;
+  }
+
+  if (allowedRoles && !allowedRoles.includes(userType)) {
+    // Redirect to unauthorized page or handle accordingly
+    return <Navigate to="/unauthorized" />;
+  }
+
+  return children;
 };
 
 export default ProtectedRoute;

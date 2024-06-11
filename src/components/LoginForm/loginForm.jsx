@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import { useNavigate } from 'react-router-dom';
 import { auth, firestore } from '../../utils/FireBaseConfig/fireBaseConfig';
 import { getDoc, doc, setDoc } from 'firebase/firestore';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
@@ -8,7 +8,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import Button from '@mui/material/Button';
 import { Typography } from '@mui/material';
 import { TextField, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
-import { useAuth } from '../../utils/Auth/AuthContext'; // Import useAuth
+import { useAuth } from '../../utils/Auth/AuthContext';
 
 const LoginForm = () => {
   const [loginEmail, setLoginEmail] = useState('');
@@ -18,8 +18,8 @@ const LoginForm = () => {
   const [signupUsername, setSignupUsername] = useState('');
   const [userType, setUserType] = useState('buyer');
   const [isLogin, setIsLogin] = useState(true);
-  const { login } = useAuth(); // Use login from AuthContext
-  const navigate = useNavigate(); // Initialize useNavigate
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
   const handleLogin = async () => {
     try {
@@ -29,37 +29,30 @@ const LoginForm = () => {
       const userDoc = await getDoc(doc(firestore, 'users', user.uid));
       const userData = userDoc.data();
       const loggedInUserType = userData ? userData.userType : null;
-  
-      // Check if user type matches login attempt
-      if ((loggedInUserType === 'buyer' && isBuyerLogin()) || (loggedInUserType === 'seller' && !isBuyerLogin())) {
+
+      if (loggedInUserType) {
         toast.success('Login successful');
-        login(loggedInUserType); // Call login function from AuthContext
-        navigate(`/${loggedInUserType}`); // Navigate to the user type page
+        login(loggedInUserType);
+        navigate(`/${loggedInUserType}`);
       } else {
-        throw new Error(`You are logged in as a ${isBuyerLogin() ? 'seller' : 'buyer'}. Please log in as a ${loggedInUserType}.`);
+        throw new Error('User type not found');
       }
     } catch (error) {
       toast.error(`Login error: ${error.message}`);
     }
   };
-  
-  const isBuyerLogin = () => {
-    return userType === 'buyer'; // Determine if the login attempt is for a buyer
-  };
 
   const handleSignup = async () => {
     try {
-      // Create user in Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(auth, signupEmail, signupPassword);
       const user = userCredential.user;
-  
-      // Save additional user details in Firestore
+
       await setDoc(doc(firestore, 'users', user.uid), {
         email: signupEmail,
         username: signupUsername,
         userType: userType,
       });
-  
+
       toast.success('Signup successful');
       setIsLogin(true);
     } catch (error) {
@@ -72,19 +65,6 @@ const LoginForm = () => {
       <div style={formContainerStyle}>
         <ToastContainer />
         <Typography variant="h4" align="center" gutterBottom>{isLogin ? 'Login' : 'Signup'}</Typography>
-        <div style={{ marginBottom: '10px' }}>
-          <InputLabel htmlFor="user-type" style={{ marginBottom: '5px', display: 'block' }}>User Type</InputLabel>
-          <FormControl fullWidth variant="outlined">
-            <Select
-              id="user-type"
-              value={userType}
-              onChange={(e) => setUserType(e.target.value)}
-            >
-              <MenuItem value="buyer">Buyer</MenuItem>
-              <MenuItem value="seller">Seller</MenuItem>
-            </Select>
-          </FormControl>
-        </div>
         {isLogin ? (
           <>
             <TextField
@@ -109,6 +89,28 @@ const LoginForm = () => {
           </>
         ) : (
           <>
+           <div style={{ marginBottom: '10px' }}>
+              <InputLabel htmlFor="user-type" style={{ marginBottom: '5px', display: 'block' }}>User Type</InputLabel>
+              <FormControl fullWidth variant="outlined">
+                <Select
+                  id="user-type"
+                  value={userType}
+                  onChange={(e) => setUserType(e.target.value)}
+                >
+                  <MenuItem value="buyer">Buyer</MenuItem>
+                  <MenuItem value="seller">Seller</MenuItem>
+                </Select>
+              </FormControl>
+            </div>
+            <TextField
+              label="Username"
+              variant="outlined"
+              fullWidth
+              margin="normal"
+              value={signupUsername}
+              onChange={(e) => setSignupUsername(e.target.value)}
+            />
+           
             <TextField
               label="Email"
               variant="outlined"
@@ -126,14 +128,7 @@ const LoginForm = () => {
               value={signupPassword}
               onChange={(e) => setSignupPassword(e.target.value)}
             />
-            <TextField
-              label="Username"
-              variant="outlined"
-              fullWidth
-              margin="normal"
-              value={signupUsername}
-              onChange={(e) => setSignupUsername(e.target.value)}
-            />
+           
             <Button variant="contained" color="primary" fullWidth onClick={handleSignup}>Signup</Button>
             <Typography align="center" variant="body2" gutterBottom>Already have an account? <span style={switchLinkStyle} onClick={() => setIsLogin(true)}>Login</span></Typography>
           </>

@@ -12,20 +12,23 @@ const AppRoutes = () => {
 
   return (
     <Routes>
-      <Route path="/" element={isLoggedIn ? <Navigate to={`/${userType}`} /> : <Navigate to="/login" />} />
-      <Route path="/login" element={isLoggedIn ? <Navigate to={`/${userType}`} /> : <LoginForm />} />
-      <Route 
-        path="/buyer" 
+      <Route
+        path="/"
+        element={isLoggedIn ? <Navigate to={`/${userType}`} /> : <Navigate to="/login" />}
+      />
+      <Route path="/login" element={<LoginForm />} />
+      <Route
+        path="/buyer/*"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={["buyer"]}>
             <BuyerDbPage />
           </ProtectedRoute>
         }
       />
-      <Route 
-        path="/seller" 
+      <Route
+        path="/seller/*"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={["seller"]}>
             <SellerDbPage />
           </ProtectedRoute>
         }
