@@ -23,7 +23,8 @@ const Verified = () => {
   const [error, setError] = useState(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [verificationStatus, setVerificationStatus] = useState(null);
-console.log(isSubmitted);
+  const [queryReason, setQueryReason] = useState('');
+
   useEffect(() => {
     if (currentUser) {
       const fetchUserId = async () => {
@@ -35,6 +36,9 @@ console.log(isSubmitted);
           if (docSnapshot.exists()) {
             const data = docSnapshot.data();
             setVerificationStatus(data.status);
+            if (data.status === 'queried') {
+              setQueryReason(data.reason);
+            }
           }
         } catch (error) {
           console.error('Error fetching user ID:', error);
@@ -109,21 +113,42 @@ console.log(isSubmitted);
   };
 
   return (
-    <Box 
-      sx={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
+    <Box
+      sx={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
         height: '100vh',
-        flexDirection: 'column' 
+        flexDirection: 'column'
       }}
     >
       <Paper elevation={3} sx={{ p: 4, width: '100%', maxWidth: 600 }}>
-        {verificationStatus === 'pending' ? (
+        {verificationStatus === 'pending' && (
           <Typography variant="h4" gutterBottom>
             Your verification status is pending.
           </Typography>
-        ) : (
+        )}
+        {verificationStatus === 'approved' && (
+          <Typography variant="h4" gutterBottom>
+            Your verification has been approved.
+          </Typography>
+        )}
+        {verificationStatus === 'rejected' && (
+          <Box>
+            <Typography variant="h4" gutterBottom>
+              Your verification has been rejected.
+            </Typography>
+            <Button variant="contained" color="primary" onClick={() => setVerificationStatus(null)}>
+              Send Again
+            </Button>
+          </Box>
+        )}
+        {verificationStatus === 'queried' && (
+          <Typography variant="h4" gutterBottom>
+            Your verification has been queried. Reason: {queryReason}
+          </Typography>
+        )}
+        {!verificationStatus && (
           <Box component="form" onSubmit={handleSubmit}>
             <Typography variant="h4" gutterBottom>
               Verification Form
@@ -178,7 +203,8 @@ console.log(isSubmitted);
                 accept=".pdf,.jpg,.jpeg,.png"
                 style={{ marginTop: '10px' }}
               />
-              <input
+             
+             <input
                 type="file"
                 name="pan"
                 onChange={handleFileChange}
