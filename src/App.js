@@ -7,7 +7,7 @@ import BuyerDbPage from "./pages/BuyerDbPage/buyerDbPage";
 import SellerDbPage from "./pages/SellerDbPage/sellerDbPage";
 import ProtectedRoute from "./utils/ProtectedRoute/ProtectedRoute";
 import AdminPage from "./pages/Admin/adminPage";
-
+ import ProfilePage from "./pages/BuyerDetailsPage/profilePage";
 const AppRoutes = () => {
   const { isLoggedIn, userType } = useAuth();
 
@@ -23,6 +23,15 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute allowedRoles={["buyer"]}>
             <BuyerDbPage />
+          </ProtectedRoute>
+        }
+      />
+
+<Route
+        path="/profile/:userId/*"
+        element={
+          <ProtectedRoute allowedRoles={["buyer"]}>
+            <ProfilePage />
           </ProtectedRoute>
         }
       />
@@ -42,6 +51,8 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+
+ 
     </Routes>
     
   );

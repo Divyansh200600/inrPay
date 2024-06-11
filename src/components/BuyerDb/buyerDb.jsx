@@ -7,6 +7,7 @@ import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import { keyframes } from '@emotion/react';
+import Avatar from '@mui/material/Avatar';
 // Import the necessary features/components
 import C2I from './features/C2I';
 import I2C from './features/I2C';
@@ -16,13 +17,17 @@ import Help from './features/help';
 import Contact from './features/contact';
 
 const BuyerDb = () => {
-  const { logout } = useAuth();
+  const { logout, currentUser } = useAuth();
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState('');
 
   const handleLogout = () => {
     logout();
     navigate('/');
+  };
+
+  const handleProfileClick = () => {
+    navigate(`/profile/${currentUser.uid}`);
   };
 
   const buyerOptions = [
@@ -146,9 +151,12 @@ const BuyerDb = () => {
         boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
       }}>
         <h1 style={{ margin: '0', fontSize: '1.5rem' }}>Buyer Dashboard</h1>
-        <Button variant="contained" color="secondary" onClick={handleLogout} style={{ marginRight: '10px' }}>
-          Logout
-        </Button>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <Button variant="contained" color="secondary" onClick={handleLogout} style={{ marginRight: '10px' }}>
+            Logout
+          </Button>
+          <Avatar onClick={handleProfileClick} style={{ cursor: 'pointer' }}>P</Avatar>
+        </div>
       </nav>
 
       <Box style={{ 
