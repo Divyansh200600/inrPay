@@ -1,181 +1,175 @@
 import React, { useState, useEffect } from "react";
-import { Typography, TextField, Button, Avatar, Box, Paper, IconButton, Modal } from "@mui/material";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { List, ListItem, ListItemText, Typography, Paper, Divider, Box, Button, Grid } from "@mui/material";
+import { collection, getDocs, deleteDoc, doc, addDoc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { firestore } from "../../../utils/FireBaseConfig/fireBaseConfig";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { useAuth } from "../../../utils/Auth/AuthContext";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import WarningIcon from "@mui/icons-material/Warning";
-import AchievementImage1 from "../../../resources/images/btc.png";
-import AchievementImage2 from "../../../resources/images/usdt.png";
-import AchievementImage3 from "../../../resources/images/tron.png";
-import AchievementImage4 from "../../../resources/images/ltc.png";
 
 const ManageDeal = () => {
   const { currentUser } = useAuth();
-  const [userData, setUserData] = useState(null);
-  const [editedData, setEditedData] = useState({
-    username: "",
-    name: "",
-    profileURL: "",
-    status: "",
-    limit: "",
-    walletBalance: 0,
-    cryptocurrencies: [],
-  });
-  const [isEditing, setIsEditing] = useState(false);
-  const [selectedAchievement, setSelectedAchievement] = useState(null);
+  const [proposals, setProposals] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [activeChatRooms, setActiveChatRooms] = useState([]);
 
   useEffect(() => {
-    if (currentUser) {
-      fetchUserData(currentUser.uid);
-    }
+    const fetchProposals = async () => {
+      if (!currentUser) return;
+
+      try {
+        setLoading(true);
+
+        const proposalsRef = collection(firestore, `users/${currentUser.uid}/proposals`);
+        const querySnapshot = await getDocs(proposalsRef);
+
+        let fetchedProposals = [];
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          fetchedProposals.push({ id: doc.id, ...data });
+        });
+
+        setProposals(fetchedProposals);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching proposals:", error);
+        toast.error(`Error fetching proposals: ${error.message}`);
+        setError("Error fetching proposals. Please try again later.");
+        setLoading(false);
+      }
+    };
+
+    fetchProposals();
   }, [currentUser]);
 
-  const fetchUserData = async (userId) => {
+  const handleAccept = async (proposal) => {
     try {
-      const userRef = doc(firestore, "users", userId);
-      const userDoc = await getDoc(userRef);
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        const verifyRef = doc(firestore, "users", userId, "verify", "form");
-        const verifyDoc = await getDoc(verifyRef);
-        if (verifyDoc.exists()) {
-          const verifyData = verifyDoc.data();
-          setEditedData({
-            ...editedData,
-            username: userData.username,
-            name: verifyData.name,
-            profileURL: verifyData.profileURL,
-            status: verifyData.status,
-            limit: verifyData.limit,
-            walletBalance: verifyData.walletBalance || 0,
-            cryptocurrencies: verifyData.cryptocurrencies || [],
-          });
-        }
-        setUserData(userData);
+      if (!proposal.buyerId || !currentUser?.uid) {
+        toast.error("Invalid buyer or seller ID");
+        return;
       }
-    } catch (error) {
-      console.error("Error fetching user data:", error);
-    }
-  };
-
-  const handleEdit = () => {
-    setIsEditing(true);
-  };
-
-  const handleSave = async () => {
-    try {
-      const verifyRef = doc(firestore, "users", currentUser.uid, "verify", "form");
-      await updateDoc(verifyRef, {
-        name: editedData.name,
-        walletBalance: editedData.walletBalance,
-        cryptocurrencies: editedData.cryptocurrencies,
-        // Update other editable fields here
+  
+      toast.success(`Proposal ${proposal.id} accepted.`);
+  
+      // Create a new chat room document
+      const chatRoomRef = collection(firestore, 'chatRooms');
+      const newChatRoomDoc = await addDoc(chatRoomRef, {
+        buyerId: proposal.buyerId,
+        sellerId: currentUser.uid,
+        createdAt: serverTimestamp(),
       });
-      setIsEditing(false);
+  
+      const chatRoomId = newChatRoomDoc.id;
+  
+      // Update buyer's proposal document with chatRoomId
+      const buyerProposalDocRef = doc(firestore, `users/${proposal.buyerId}/proposals`, proposal.id);
+      await updateDoc(buyerProposalDocRef, { chatRoomId });
+  
+      // Update seller's proposal document with chatRoomId
+      const sellerProposalDocRef = doc(firestore, `users/${currentUser.uid}/proposals`, proposal.id);
+      await updateDoc(sellerProposalDocRef, { chatRoomId });
+  
+      // Update active chat rooms state
+      setActiveChatRooms((prevRooms) => [
+        ...prevRooms,
+        {
+          id: chatRoomId,
+          buyerId: proposal.buyerId,
+          sellerId: currentUser.uid,
+        },
+      ]);
     } catch (error) {
-      console.error("Error saving user data:", error);
+      console.error("Error accepting proposal:", error);
+      toast.error(`Error accepting proposal: ${error.message}`);
+    }
+  };
+  
+
+  const handleReject = async (proposal) => {
+    try {
+      const proposalDocRef = doc(firestore, `users/${currentUser.uid}/proposals`, proposal.id);
+      await deleteDoc(proposalDocRef);
+
+      const notificationsRef = collection(firestore, `users/${proposal.buyerId}/notifications`);
+      await addDoc(notificationsRef, {
+        message: `Your proposal to ${currentUser.uid} was rejected.`,
+        timestamp: serverTimestamp(),
+      });
+
+      setProposals(proposals.filter((p) => p.id !== proposal.id));
+      toast.success(`Proposal ${proposal.id} rejected and deleted.`);
+    } catch (error) {
+      console.error("Error rejecting proposal:", error);
+      toast.error(`Error rejecting proposal: ${error.message}`);
     }
   };
 
-  const handleChange = (e) => {
-    setEditedData({ ...editedData, [e.target.name]: e.target.value });
+  const formatTime = (seconds) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds < 10 ? "0" : ""}${remainingSeconds}`;
   };
 
-  const renderVerificationIcon = () => {
-    if (editedData.status === "approved") {
-      return <CheckCircleIcon sx={{ color: "green" }} />;
-    } else if (editedData.status === "pending") {
-      return <WarningIcon sx={{ color: "yellow" }} />;
-    }
-    return null;
-  };
-
-  const handleOpenAchievement = (achievementImage) => {
-    setSelectedAchievement(achievementImage);
-  };
-
-  const handleCloseAchievement = () => {
-    setSelectedAchievement(null);
-  };
+  if (!currentUser) {
+    return (
+      <Paper elevation={3} sx={{ p: 2, width: "50%", borderRadius: "16px", marginBottom: "20px" }}>
+        <Typography variant="body1" color="error">No user logged in.</Typography>
+      </Paper>
+    );
+  }
 
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative" }}>
-      <Paper elevation={3} sx={{ p: 2, width: "150%", borderRadius: "40px", backgroundColor: "#cacaca", marginTop: "-20px", marginBottom: "20px", position: "relative" }}>
-        <Box display="flex" alignItems="center">
-          <Avatar alt={userData?.username} src={editedData?.profileURL} sx={{ width: 100, height: 100, marginRight: "20px" }} />
-          <Box>
-            <Typography variant="h5" sx={{ fontWeight: "bold", marginBottom: "10px" }}>{editedData?.username}</Typography>
-            <Box sx={{ display: "flex", alignItems: "center", marginBottom: "10px" }}>
-              <Typography variant="subtitle1" sx={{ marginRight: "10px" }}>Username:</Typography>
-              <Typography variant="body1" sx={{ fontWeight: "bold" }}>{editedData?.username}</Typography>
-            </Box>
-            {isEditing ? (
-              <TextField
-                name="name"
-                label="Name"
-                value={editedData?.name}
-                onChange={handleChange}
-                fullWidth
-                margin="normal"
-              />
-            ) : (
-              <Box sx={{ display: "flex", alignItems: "center", marginBottom: "10px" }}>
-                <Typography variant="subtitle1" sx={{ marginRight: "10px" }}>Name:</Typography>
-                <Typography variant="body1" sx={{ fontWeight: "bold" }}>{editedData?.name}</Typography>
+    <Paper elevation={3} sx={{ p: 2, width: "50%", borderRadius: "16px", marginBottom: "20px" }}>
+      <Typography variant="h5" gutterBottom>New Proposals</Typography>
+      <ToastContainer />
+      {loading && <Typography variant="body1">Loading...</Typography>}
+      {!loading && error && (
+        <Typography variant="body1" color="error">{error}</Typography>
+      )}
+      {!loading && !error && (
+        <List>
+          {proposals.length > 0 ? (
+            proposals.map((proposal) => (
+              <Box key={proposal.id} sx={{ mb: 2 }}>
+                <Paper elevation={3} sx={{ p: 2, borderRadius: "16px", backgroundColor: "#f0f0f0", border: "1px solid #ccc" }}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#333", borderBottom: "1px solid #ccc", paddingBottom: 1 }} gutterBottom>Proposal ID: {proposal.id}</Typography>
+                  <Divider sx={{ my: 2 }} />
+                  <Typography variant="body1" sx={{ display: "flex", alignItems: "center" }}>
+                    <span style={{ fontWeight: "bold", marginRight: "8px" }}>Amount and Currency:</span> ${proposal.amountCurrency}
+                  </Typography>
+                  <Typography variant="body1" sx={{ display: "flex", alignItems: "center" }}>
+                    <span style={{ fontWeight: "bold", marginRight: "8px" }}>Wallet Name:</span> {proposal.walletName}
+                  </Typography>
+                  <Typography variant="body1" sx={{ display: "flex", alignItems: "center" }}>
+                    <span style={{ fontWeight: "bold", marginRight: "8px" }}>Time Remaining:</span> {formatTime(proposal.remainingTime)}
+                  </Typography>
+                  <Typography variant="body1" sx={{ display: "flex", alignItems: "center" }}>
+                    <span style={{ fontWeight: "bold", marginRight: "8px" }}>Buyer ID:</span> {proposal.buyerId}
+                  </Typography>
+                  <Typography variant="body1" sx={{ display: "flex", alignItems: "center" }}>
+                    <span style={{ fontWeight: "bold", marginRight: "8px" }}>Seller ID:</span> {currentUser.uid}
+                  </Typography>
+
+                  <Grid container spacing={2} justifyContent="flex-end" sx={{ mt: 2 }}>
+                    <Grid item>
+                      <Button variant="contained" color="primary" onClick={() => handleAccept(proposal)}>Accept</Button>
+                    </Grid>
+                    <Grid item>
+                      <Button variant="contained" color="secondary" onClick={() => handleReject(proposal)}>Reject</Button>
+                    </Grid>
+                  </Grid>
+                </Paper>
               </Box>
-            )}
-            <Box sx={{ display: "flex", alignItems: "center", marginBottom: "10px" }}>
-              <Typography variant="subtitle1" sx={{ marginRight: "10px" }}>Status:</Typography>
-              <Typography variant="body1" sx={{ fontWeight: "bold" }}>{editedData?.status} {renderVerificationIcon()}</Typography>
-            </Box>
-            <Box sx={{ display: "flex", alignItems: "center", marginBottom: "10px" }}>
-              <Typography variant="subtitle1" sx={{ marginRight: "10px" }}>Limit:</Typography>
-              <Typography variant="body1" sx={{ fontWeight: "bold" }}>{editedData?.limit}$</Typography>
-            </Box>
-            {isEditing ? (
-              <TextField
-                name="walletBalance"
-                label="Wallet Balance"
-                value={editedData?.walletBalance}
-                onChange={handleChange}
-                fullWidth
-                margin="normal"
-              />
-            ) : (
-              <Box sx={{ display: "flex", alignItems: "center", marginBottom: "10px" }}>
-                <Typography variant="subtitle1" sx={{ marginRight: "10px" }}>Wallet Balance:</Typography>
-                <Typography variant="body1" sx={{ fontWeight: "bold" }}>{editedData?.walletBalance}$</Typography>
-              </Box>
-            )}
-            {/* Display other non-editable fields */}
-            <Button variant="contained" color="primary" onClick={isEditing ? handleSave : handleEdit} sx={{ borderRadius: "20px", marginBottom: "10px" }}>
-              {isEditing ? "Save" : "Edit"}
-            </Button>
-          </Box>
-        </Box>
-        <Box sx={{ position: "absolute", top: "16px", right: "16px", display: "flex", flexDirection: "column", alignItems: "center" }}>
-          <IconButton onClick={() => handleOpenAchievement(AchievementImage1)} sx={{ margin: "5px" }}>
-            <img src={AchievementImage1} alt="Achievement" style={{ width: 48, height: 48, borderRadius: "50%" }} />
-          </IconButton>
-          <IconButton onClick={() => handleOpenAchievement(AchievementImage2)} sx={{ margin: "5px" }}>
-            <img src={AchievementImage2} alt="Achievement" style={{ width: 48, height: 48, borderRadius: "50%" }} />
-          </IconButton>
-          <IconButton onClick={() => handleOpenAchievement(AchievementImage3)} sx={{ margin: "5px" }}>
-            <img src={AchievementImage3} alt="Achievement" style={{ width: 48, height: 48, borderRadius: "50%" }} />
-          </IconButton>
-          <IconButton onClick={() => handleOpenAchievement(AchievementImage4)} sx={{ margin: "5px" }}>
-            <img src={AchievementImage4} alt="Achievement" style={{ width: 48, height: 48, borderRadius: "50%" }} />
-          </IconButton>
-        </Box>
-      </Paper>
-      <Typography variant="h4" sx={{ marginBottom: "20px" }}>Manage Deal</Typography>
-      <Modal open={Boolean(selectedAchievement)} onClose={handleCloseAchievement}>
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: 400, bgcolor: 'background.paper', borderRadius: 16, p: 2 }}>
-          {selectedAchievement && <img src={selectedAchievement} alt="Achievement" style={{ maxWidth: '100%', maxHeight: '100%' }} />}
-        </Box>
-      </Modal>
-    </Box>
+
+            ))
+          ) : (
+            <ListItem>
+              <ListItemText primary="No saved proposals found." />
+            </ListItem>
+          )}
+        </List>
+      )}
+    </Paper>
   );
 };
 

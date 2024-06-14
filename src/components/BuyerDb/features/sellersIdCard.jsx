@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { Typography, Avatar, Box, Paper, IconButton, Modal, Button } from "@mui/material";
-import { doc, getDoc, collection, addDoc } from "firebase/firestore";
+import { doc, getDoc, collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import AchievementImage1 from "../../../resources/images/btc.png";
 import AchievementImage2 from "../../../resources/images/usdt.png";
 import AchievementImage3 from "../../../resources/images/tron.png";
 import AchievementImage4 from "../../../resources/images/ltc.png";
-import { firestore } from "../../../utils/FireBaseConfig/fireBaseConfig";
+import { firestore, auth } from "../../../utils/FireBaseConfig/fireBaseConfig";
 import WarningIcon from "@mui/icons-material/Warning";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ProposalForm from "./ProposalForm";
@@ -85,10 +85,22 @@ const SellerIDCard = ({ userId }) => {
 
   const handleSendProposal = async (proposal) => {
     try {
-      const proposalsRef = collection(firestore, `users/${userId}/proposals`);
-      const docRef = await addDoc(proposalsRef, proposal);
+      const proposalData = {
+        ...proposal,
+        buyerId: auth.currentUser.uid,
+        sellerId: userId,
+        createdAt: serverTimestamp(),
+      };
+
+      // Add proposal to seller's proposals collection
+      const sellerProposalsRef = collection(firestore, `users/${userId}/proposals`);
+      await addDoc(sellerProposalsRef, proposalData);
+
+      // Add proposal to buyer's proposals collection
+      const buyerProposalsRef = collection(firestore, `users/${auth.currentUser.uid}/proposals`);
+      await addDoc(buyerProposalsRef, proposalData);
+
       toast.success("Proposal sent successfully!");
-      console.log("Proposal ID: ", docRef.id); // Log the generated proposal ID
     } catch (error) {
       toast.error(`Error sending proposal: ${error.message}`);
     }

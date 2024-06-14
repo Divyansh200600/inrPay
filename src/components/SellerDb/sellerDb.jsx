@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+// SellerDb.js
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../utils/Auth/AuthContext';
 import Button from '@mui/material/Button';
 import { useNavigate } from 'react-router-dom';
@@ -6,37 +7,43 @@ import Sidebar from '../SideBar/sidebar';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
-import Chat from '../Chat'; 
 import { keyframes } from '@emotion/react';
 
 // All features
 import Verified from './features/Verified';
+import ManageProfile from './features/manageProfile';
 import ManageDeal from './features/manageDeal';
-import NewDeal from './features/newDeal';
 import Help from './features/help';
 import Contact from './features/contact';
+import ChatRooms from '../chat/chat';  // New component to list chat rooms
 
 const SellerDb = () => {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState('');
-  const [selectedProposal, setSelectedProposal] = useState(null); // State to hold selected proposal
 
-  console.log(setSelectedProposal)
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
+  useEffect(() => {
+    // Example of fetching initial data or setting up event listeners
+    // Ensure currentUser is loaded properly before using it
+    if (currentUser) {
+      // Perform any additional setup if needed
+    }
+  }, [currentUser]); // Dependency array to ensure useEffect runs when currentUser changes
+
   const sellerOptions = [
-    { name: 'New Deal' },
     { name: 'Manage Deal' },
+    { name: 'Manage Profile' },
     { name: 'Verified' },
+    { name: 'Chat Rooms' },  // New menu option
     { name: 'Help' },
     { name: 'Contact' },
   ];
 
- 
   const fadeIn = keyframes`
     from {
       opacity: 0;
@@ -46,22 +53,16 @@ const SellerDb = () => {
     }
   `;
 
-  const renderChat = () => {
-    if (selectedProposal) {
-      const roomId = `Chat Room - ${selectedProposal.id}`; // Assuming selectedProposal has an id
-      return <Chat currentUser={currentUser} roomId={roomId} />;
-    }
-    return null;
-  };
-
   const renderContent = () => {
     switch (selectedCategory) {
+      case 'Manage Profile':
+        return <ManageProfile />;
       case 'Manage Deal':
         return <ManageDeal />;
-      case 'New Deal':
-        return <NewDeal />;
       case 'Verified':
         return <Verified />;
+      case 'Chat Rooms':  // New case for chat rooms
+        return <ChatRooms userRole="seller" />;
       case 'Help':
         return <Help />;
       case 'Contact':
@@ -85,7 +86,7 @@ const SellerDb = () => {
                 padding: '20px',
                 margin: '10px',
                 width: '45%',
-                backgroundColor                : '#2ECC40',
+                backgroundColor: '#2ECC40',
                 color: '#ffffff',
               }}>
                 <Typography variant="h6" gutterBottom>Successful Deals</Typography>
@@ -129,11 +130,6 @@ const SellerDb = () => {
                 <Typography variant="body1">Content for transaction history...</Typography>
               </Paper>
             </Box>
-
-            <Box>
-              {/* Render the Chat component */}
-              {renderChat()}
-            </Box>
           </Box>
         );
     }
@@ -141,7 +137,7 @@ const SellerDb = () => {
 
   return (
     <div>
-      <Sidebar leftOptions={sellerOptions}  onItemClick={setSelectedCategory} />
+      <Sidebar leftOptions={sellerOptions} onItemClick={setSelectedCategory} />
 
       <nav style={{
         width: '100%',
@@ -171,7 +167,6 @@ const SellerDb = () => {
         marginTop: '100px',
         animation: `${fadeIn} 1s ease-in`,
       }}>
-        {/* Render the content based on selectedCategory */}
         {renderContent()}
       </Box>
     </div>
@@ -179,4 +174,3 @@ const SellerDb = () => {
 };
 
 export default SellerDb;
-
