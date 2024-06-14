@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Typography, Avatar, Box, Paper, IconButton, Modal } from "@mui/material";
-import { doc, getDoc } from "firebase/firestore";
+import { Typography, Avatar, Box, Paper, IconButton, Modal, Button } from "@mui/material";
+import { doc, getDoc, collection, addDoc } from "firebase/firestore";
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import AchievementImage1 from "../../../resources/images/btc.png";
 import AchievementImage2 from "../../../resources/images/usdt.png";
 import AchievementImage3 from "../../../resources/images/tron.png";
@@ -8,10 +10,12 @@ import AchievementImage4 from "../../../resources/images/ltc.png";
 import { firestore } from "../../../utils/FireBaseConfig/fireBaseConfig";
 import WarningIcon from "@mui/icons-material/Warning";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import ProposalForm from "./ProposalForm";
 
 const SellerIDCard = ({ userId }) => {
   const [seller, setSeller] = useState(null);
   const [selectedAchievement, setSelectedAchievement] = useState(null);
+  const [isProposalFormOpen, setIsProposalFormOpen] = useState(false);
   const [editedData, setEditedData] = useState({
     username: "",
     name: "",
@@ -21,7 +25,6 @@ const SellerIDCard = ({ userId }) => {
     walletBalance: 0,
     cryptocurrencies: [],
   });
-
 
   useEffect(() => {
     const fetchSellerData = async () => {
@@ -60,11 +63,9 @@ const SellerIDCard = ({ userId }) => {
         console.error("Error getting seller data:", error);
       }
     };
-  
+
     fetchSellerData();
   }, [userId]);
-  
-
 
   const handleOpenAchievement = (achievementImage) => {
     setSelectedAchievement(achievementImage);
@@ -74,8 +75,26 @@ const SellerIDCard = ({ userId }) => {
     setSelectedAchievement(null);
   };
 
+  const handleOpenProposalForm = () => {
+    setIsProposalFormOpen(true);
+  };
+
+  const handleCloseProposalForm = () => {
+    setIsProposalFormOpen(false);
+  };
+
+  const handleSendProposal = async (proposal) => {
+    try {
+      const proposalsRef = collection(firestore, `users/${userId}/proposals`);
+      const docRef = await addDoc(proposalsRef, proposal);
+      toast.success("Proposal sent successfully!");
+      console.log("Proposal ID: ", docRef.id); // Log the generated proposal ID
+    } catch (error) {
+      toast.error(`Error sending proposal: ${error.message}`);
+    }
+  };
+
   if (!seller) {
-    // Return null if seller data is not fetched yet
     return null;
   }
 
@@ -89,7 +108,6 @@ const SellerIDCard = ({ userId }) => {
   };
 
   return (
-    
     <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", position: "relative", height: "fit-content", gap: "20px", marginBottom: "20px" }}>
       <Paper elevation={3} sx={{ p: 2, width: "180%", borderRadius: "40px", backgroundColor: "#cacaca", marginBottom: "30px", position: "relative", minHeight: "300px" }}>
         <Box display="flex" alignItems="center">
@@ -132,12 +150,20 @@ const SellerIDCard = ({ userId }) => {
             <img src={AchievementImage4} alt="Achievement" style={{ width: 48, height: 48, borderRadius: "50%" }} />
           </IconButton>
         </Box>
+
+        <Box sx={{ display: 'flex', justifyContent: 'center', marginTop: 2 }}>
+          <Button variant="contained" color="primary" onClick={handleOpenProposalForm}>
+            Send Proposal
+          </Button>
+        </Box>
       </Paper>
       <Modal open={Boolean(selectedAchievement)} onClose={handleCloseAchievement}>
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: 400, bgcolor: 'background.paper', borderRadius: 16, p: 2 }}>
           {selectedAchievement && <img src={selectedAchievement} alt="Achievement" style={{ maxWidth: '100%', maxHeight: '100%' }} />}
         </Box>
       </Modal>
+      <ProposalForm open={isProposalFormOpen} onClose={handleCloseProposalForm} onSubmit={handleSendProposal} />
+      <ToastContainer />
     </Box>
   );
 };
