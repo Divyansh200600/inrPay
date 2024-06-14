@@ -6,7 +6,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useAuth } from '../../../utils/Auth/AuthContext';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-
+import verifiedImage from '../../../resources/gifs/verify.gif';
 const Verified = () => {
   const { currentUser } = useAuth();
   const [userId, setUserId] = useState('');
@@ -24,7 +24,7 @@ const Verified = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [verificationStatus, setVerificationStatus] = useState(null);
   const [queryReason, setQueryReason] = useState('');
-
+console.log(isSubmitted)
   useEffect(() => {
     if (currentUser) {
       const fetchUserId = async () => {
@@ -129,9 +129,14 @@ const Verified = () => {
           </Typography>
         )}
         {verificationStatus === 'approved' && (
-          <Typography variant="h4" gutterBottom>
-            Your verification has been approved.
-          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <Typography variant="h4" gutterBottom>
+              Your verification has been approved.
+            </Typography>
+            {/* Display the picture here */}
+            <img src={verifiedImage} alt="Approved" style={{ maxWidth: '100%', maxHeight: '400px', marginTop: '20px' }} />
+
+          </Box>
         )}
         {verificationStatus === 'rejected' && (
           <Box>

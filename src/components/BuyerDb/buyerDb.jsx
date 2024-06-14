@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../utils/Auth/AuthContext';
 import Button from '@mui/material/Button';
 import { useNavigate } from 'react-router-dom';
-import Sidebar from './sidebar'; // Ensure correct import path to Sidebar
+import Sidebar from '../SideBar/sidebar'; // Ensure correct import path to Sidebar
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';

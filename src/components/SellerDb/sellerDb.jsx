@@ -2,11 +2,11 @@ import React, { useState } from 'react';
 import { useAuth } from '../../utils/Auth/AuthContext';
 import Button from '@mui/material/Button';
 import { useNavigate } from 'react-router-dom';
-import Sidebar from '../BuyerDb/sidebar'; // Ensure correct import path to Sidebar
+import Sidebar from '../SideBar/sidebar'; 
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
-import Chat from '../Chat'; // Ensure correct import path to Chat component
+import Chat from '../Chat'; 
 import { keyframes } from '@emotion/react';
 
 // All features
