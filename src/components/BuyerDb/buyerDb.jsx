@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { useAuth } from '../../utils/Auth/AuthContext';
 import Button from '@mui/material/Button';
 import { useNavigate } from 'react-router-dom';
-import Sidebar from './sidebar'; // Make sure to import the Sidebar component
+import Sidebar from './sidebar'; // Ensure correct import path to Sidebar
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
+import Chat from '../Chat'; // Ensure correct import path to Chat component
 import { keyframes } from '@emotion/react';
+
 // Import the necessary features/components
 import C2I from './features/C2I';
 import I2C from './features/I2C';
@@ -16,10 +18,11 @@ import Help from './features/help';
 import Contact from './features/contact';
 
 const BuyerDb = () => {
-  const { logout } = useAuth();
+  const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState('');
-
+  const [selectedProposal, setSelectedProposal] = useState(null); // State to hold selected proposal
+console.log(setSelectedProposal)
   const handleLogout = () => {
     logout();
     navigate('/');
@@ -34,10 +37,7 @@ const BuyerDb = () => {
     { name: 'Contact' },
   ];
 
-  const worldChatOptions = [
-    { name: 'World Chat Room-INDIA' }
-  ];
-
+ 
   const fadeIn = keyframes`
     from {
       opacity: 0;
@@ -46,6 +46,14 @@ const BuyerDb = () => {
       opacity: 1;
     }
   `;
+
+  const renderChat = () => {
+    if (selectedProposal) {
+      const roomId = `Chat Room - ${selectedProposal.id}`; // Assuming selectedProposal has an id
+      return <Chat currentUser={currentUser} roomId={roomId} />;
+    }
+    return null;
+  };
 
   const renderContent = () => {
     switch (selectedCategory) {
@@ -84,7 +92,7 @@ const BuyerDb = () => {
                 color: '#ffffff',
               }}>
                 <Typography variant="h6" gutterBottom>Successful Deals</Typography>
-                <Typography variant="body1">Animated content for successful deals...</Typography>
+                <Typography variant="body1">Content for successful deals...</Typography>
               </Paper>
             </Box>
 
@@ -97,7 +105,7 @@ const BuyerDb = () => {
                 color: '#ffffff',
               }}>
                 <Typography variant="h6" gutterBottom>Unsuccessful Deals</Typography>
-                <Typography variant="body1">Animated content for unsuccessful deals...</Typography>
+                <Typography variant="body1">Content for unsuccessful deals...</Typography>
               </Paper>
 
               <Paper elevation={5} style={{ 
@@ -108,7 +116,7 @@ const BuyerDb = () => {
                 color: '#ffffff',
               }}>
                 <Typography variant="h6" gutterBottom>User Level</Typography>
-                <Typography variant="body1">Animated content for user level...</Typography>
+                <Typography variant="body1">Content for user level...</Typography>
               </Paper>
             </Box>
 
@@ -120,8 +128,13 @@ const BuyerDb = () => {
               color: '#000000',
             }}>
               <Typography variant="h6" gutterBottom>Transaction History</Typography>
-              <Typography variant="body1">Animated content for transaction history...</Typography>
+              <Typography variant="body1">Content for transaction history...</Typography>
             </Paper>
+
+            <Box>
+              {/* Render the Chat component */}
+              {renderChat()}
+            </Box>
           </div>
         );
     }
@@ -129,7 +142,7 @@ const BuyerDb = () => {
 
   return (
     <div>
-      <Sidebar leftOptions={buyerOptions} rightOptions={worldChatOptions} onItemClick={setSelectedCategory} />
+      <Sidebar leftOptions={buyerOptions}  onItemClick={setSelectedCategory} />
 
       <nav style={{ 
         width: '100%', 
@@ -159,6 +172,7 @@ const BuyerDb = () => {
         marginTop: '100px', 
         animation: `${fadeIn} 1s ease-in`, 
       }}>
+        {/* Render the content based on selectedCategory */}
         {renderContent()}
       </Box>
     </div>
