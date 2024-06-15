@@ -1,4 +1,3 @@
-// BuyerDb.js
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../utils/Auth/AuthContext';
 import Button from '@mui/material/Button';
@@ -9,6 +8,9 @@ import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import { keyframes } from '@emotion/react';
 import ManageProposals from "./features/ManageProposals";
+import { doc, getDoc } from 'firebase/firestore'; // Ensure correct import path for Firestore
+import { firestore } from '../../utils/FireBaseConfig/fireBaseConfig';
+
 // Import the necessary features/components
 import C2I from './features/C2I';
 import I2C from './features/I2C';
@@ -22,6 +24,7 @@ const BuyerDb = () => {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [repPlus, setRepPlus] = useState(null); // Initialize with null or appropriate initial state
 
   const handleLogout = () => {
     logout();
@@ -38,6 +41,33 @@ const BuyerDb = () => {
     { name: 'Help' },
     { name: 'Contact' },
   ];
+
+  useEffect(() => {
+    const fetchRepPlus = async () => {
+      if (!currentUser) return; // Ensure currentUser is available
+
+      try {
+        // Construct the Firestore document reference
+        const userDocRef = doc(firestore, `dashBoard/${currentUser.uid}`);
+
+        // Fetch the document snapshot
+        const userDocSnap = await getDoc(userDocRef);
+
+        if (userDocSnap.exists()) {
+          // Extract the repPlus count from the document data
+          const { repPlus } = userDocSnap.data();
+          setRepPlus(repPlus); // Update state with repPlus count
+        } else {
+          console.log('Document does not exist.');
+        }
+      } catch (error) {
+        console.error('Error fetching repPlus:', error);
+        // Handle error fetching repPlus (e.g., show error message)
+      }
+    };
+
+    fetchRepPlus(); // Call the function to fetch repPlus when component mounts or currentUser changes
+  }, [currentUser]);
 
   const fadeIn = keyframes`
     from {
@@ -70,23 +100,23 @@ const BuyerDb = () => {
         return (
           <div>
             <Box style={{ display: 'flex', justifyContent: 'center' }}>
-              <Paper elevation={5} style={{ 
-                padding: '20px', 
-                margin: '10px', 
-                width: '45%', 
-                backgroundColor: '#0074D9', 
-                color: '#ffffff' 
+              <Paper elevation={5} style={{
+                padding: '20px',
+                margin: '10px',
+                width: '45%',
+                backgroundColor: '#0074D9',
+                color: '#ffffff'
               }}>
                 <Typography variant="h6" gutterBottom>All Deals</Typography>
                 <Typography variant="body1">Content for managing deals...</Typography>
               </Paper>
 
-              <Paper elevation={5} style={{ 
-                padding: '20px', 
-                margin: '10px', 
-                width: '45%', 
-                backgroundColor: '#2ECC40', 
-                color: '#ffffff' 
+              <Paper elevation={5} style={{
+                padding: '20px',
+                margin: '10px',
+                width: '45%',
+                backgroundColor: '#2ECC40',
+                color: '#ffffff'
               }}>
                 <Typography variant="h6" gutterBottom>Successful Deals</Typography>
                 <Typography variant="body1">Content for successful deals...</Typography>
@@ -94,23 +124,23 @@ const BuyerDb = () => {
             </Box>
 
             <Box style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
-              <Paper elevation={5} style={{ 
-                padding: '20px', 
-                margin: '10px', 
-                width: '45%', 
-                backgroundColor: '#FF4136', 
-                color: '#ffffff' 
+              <Paper elevation={5} style={{
+                padding: '20px',
+                margin: '10px',
+                width: '45%',
+                backgroundColor: '#FF4136',
+                color: '#ffffff'
               }}>
                 <Typography variant="h6" gutterBottom>Unsuccessful Deals</Typography>
                 <Typography variant="body1">Content for unsuccessful deals...</Typography>
               </Paper>
 
-              <Paper elevation={5} style={{ 
-                padding: '20px', 
-                margin: '10px', 
-                width: '45%', 
-                backgroundColor: '#FF851B', 
-                color: '#ffffff' 
+              <Paper elevation={5} style={{
+                padding: '20px',
+                margin: '10px',
+                width: '45%',
+                backgroundColor: '#FF851B',
+                color: '#ffffff'
               }}>
                 <Typography variant="h6" gutterBottom>User Level</Typography>
                 <Typography variant="body1">Content for user level...</Typography>
@@ -118,17 +148,34 @@ const BuyerDb = () => {
             </Box>
 
             <Box style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
-              <Paper elevation={5} style={{ 
-                padding: '20px', 
-                margin: '10px', 
-                width: '45%', 
-                backgroundColor: '#FFDC00', 
-                color: '#000000' 
+              <Paper elevation={5} style={{
+                padding: '20px',
+                margin: '10px',
+                width: '45%',
+                backgroundColor: '#FFDC00',
+                color: '#000000'
               }}>
                 <Typography variant="h6" gutterBottom>Transaction History</Typography>
                 <Typography variant="body1">Content for transaction history...</Typography>
               </Paper>
+
+              <Paper elevation={5} style={{
+                padding: '20px',
+                margin: '10px',
+                width: '45%',
+                backgroundColor: '#3f51b5',
+                color: '#ffffff'
+              }}>
+                <Typography variant="h4" gutterBottom>Rep+ Counter</Typography>
+                {repPlus !== null ? (
+                  <Typography variant="h4">{repPlus}</Typography>
+                ) : (
+                  <Typography variant="body1">Loading repPlus count...</Typography>
+                )}
+
+              </Paper>
             </Box>
+
           </div>
         );
     }
