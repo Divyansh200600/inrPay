@@ -276,6 +276,73 @@ const ChatPage = ({ roomId }) => {
       toast.error(`Error giving rep+: ${error.message}`);
     }
   };
+
+  const handleDealClose = async () => {
+    try {
+      if (!roomId || !currentUser) return;
+  
+      // Construct a reference to the chat room document
+      const chatRoomRef = doc(firestore, 'chatRooms', roomId);
+  
+      // Fetch the chat room data to determine sellerId
+      const chatRoomSnap = await getDoc(chatRoomRef);
+      if (!chatRoomSnap.exists()) {
+        console.error('Chat room does not exist.');
+        return;
+      }
+  
+      const chatRoomData = chatRoomSnap.data();
+      const buyerId = currentUser.uid;
+      const sellerId = chatRoomData.sellerId; // Assuming sellerId is stored in chat room data
+  
+      // Delete the document from Firestore
+      await deleteDoc(chatRoomRef);
+  
+      // Update dealDone count for both buyer and seller
+      const batch = writeBatch(firestore);
+  
+      // Update buyer's dashboard with dealDone count
+      const buyerDocRef = doc(firestore, 'dashBoard', buyerId);
+      const buyerDocSnap = await getDoc(buyerDocRef);
+  
+      if (!buyerDocSnap.exists()) {
+        // Create dashboard document for the buyer and set initial dealDone count
+        batch.set(buyerDocRef, { dealDone: 1 });
+      } else {
+        // Increment dealDone if buyerDoc exists
+        const newDealDoneBuyer = (buyerDocSnap.data().dealDone || 0) + 1;
+        batch.update(buyerDocRef, { dealDone: newDealDoneBuyer });
+      }
+  
+      // Update seller's dashboard with dealDone count
+      const sellerDocRef = doc(firestore, 'dashBoard', sellerId);
+      const sellerDocSnap = await getDoc(sellerDocRef);
+  
+      if (!sellerDocSnap.exists()) {
+        // Create dashboard document for the seller and set initial dealDone count
+        batch.set(sellerDocRef, { dealDone: 1 });
+      } else {
+        // Increment dealDone if sellerDoc exists
+        const newDealDoneSeller = (sellerDocSnap.data().dealDone || 0) + 1;
+        batch.update(sellerDocRef, { dealDone: newDealDoneSeller });
+      }
+  
+      // Commit the batch write
+      await batch.commit();
+  
+      // Optionally, you may want to navigate away or provide feedback to the user
+      console.log(`Chat room ${roomId} successfully closed.`);
+      toast.success('Chat room closed successfully.');
+  
+      // Implement any additional logic as needed after deleting the chat room and updating dealDone counts
+    } catch (error) {
+      console.error('Error closing deal:', error);
+      toast.error(`Error closing deal: ${error.message}`);
+    }
+  };
+  
+  
+  
   
   return (
     <Box
@@ -383,6 +450,15 @@ const ChatPage = ({ roomId }) => {
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
           <Button variant="contained" color="primary" onClick={handleRepPlus}>
             Rep+
+          </Button>
+        </Box>
+          )}
+
+          {/* Deal Close button */}
+ {!repPlusGiven && (
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
+          <Button variant="contained" color="primary" onClick={handleDealClose}>
+           Deal Close
           </Button>
         </Box>
           )}

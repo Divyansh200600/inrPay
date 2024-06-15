@@ -1,4 +1,3 @@
-// SellerDb.js
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../utils/Auth/AuthContext';
 import Button from '@mui/material/Button';
@@ -11,32 +10,26 @@ import { keyframes } from '@emotion/react';
 import { doc, getDoc } from 'firebase/firestore'; // Ensure correct import path for Firestore
 import { firestore } from '../../utils/FireBaseConfig/fireBaseConfig';
 
-// All features
+// Import all features here
 import Verified from './features/Verified';
 import ManageProfile from './features/manageProfile';
 import ManageDeal from './features/manageDeal';
 import Help from './features/help';
 import Contact from './features/contact';
-import ChatRooms from '../chat/chat';  // New component to list chat rooms
+import ChatRooms from '../chat/chat';
 
 const SellerDb = () => {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState('');
   const [repPlus, setRepPlus] = useState(null); // Initialize with null or appropriate initial state
+  const [dealDone, setDealDone] = useState(null); // Initialize dealDone state
+  const [loading, setLoading] = useState(true); // Loading state for initial fetch
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
-
-  useEffect(() => {
-    // Example of fetching initial data or setting up event listeners
-    // Ensure currentUser is loaded properly before using it
-    if (currentUser) {
-      // Perform any additional setup if needed
-    }
-  }, [currentUser]); // Dependency array to ensure useEffect runs when currentUser changes
 
   const sellerOptions = [
     { name: 'Manage Deal' },
@@ -50,6 +43,34 @@ const SellerDb = () => {
   useEffect(() => {
     const fetchRepPlus = async () => {
       if (!currentUser) return; // Ensure currentUser is available
+  
+      try {
+        // Construct the Firestore document reference for repPlus
+        const userDocRef = doc(firestore, `dashBoard/${currentUser.uid}`);
+  
+        // Fetch the document snapshot for repPlus
+        const userDocSnap = await getDoc(userDocRef);
+  
+        if (userDocSnap.exists()) {
+          // Extract the repPlus count from the document data
+          const { repPlus } = userDocSnap.data();
+          setRepPlus(repPlus); // Update state with repPlus count
+        } else {
+          console.log('User document does not exist.');
+        }
+      } catch (error) {
+        console.error('Error fetching repPlus:', error);
+        // Handle error fetching repPlus (e.g., show error message)
+      }
+    };
+
+    fetchRepPlus(); // Call the function to fetch repPlus when component mounts or currentUser changes
+    
+  }, [currentUser]);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!currentUser) return;
 
       try {
         // Construct the Firestore document reference
@@ -59,21 +80,23 @@ const SellerDb = () => {
         const userDocSnap = await getDoc(userDocRef);
 
         if (userDocSnap.exists()) {
-          // Extract the repPlus count from the document data
-          const { repPlus } = userDocSnap.data();
-          setRepPlus(repPlus); // Update state with repPlus count
+          // Extract the dealDone field from the document data
+          const userData = userDocSnap.data();
+          const { dealDone } = userData;
+          setDealDone(dealDone); // Update state with dealDone count
         } else {
-          console.log('Document does not exist.');
+          console.log('User document does not exist.');
         }
       } catch (error) {
-        console.error('Error fetching repPlus:', error);
-        // Handle error fetching repPlus (e.g., show error message)
+        console.error('Error fetching user data:', error);
+        // Handle error fetching data
+      } finally {
+        setLoading(false); // Update loading state
       }
     };
 
-    fetchRepPlus(); // Call the function to fetch repPlus when component mounts or currentUser changes
+    fetchUserData(); // Call the function to fetch user data when component mounts or currentUser changes
   }, [currentUser]);
-
 
   const fadeIn = keyframes`
     from {
@@ -85,6 +108,10 @@ const SellerDb = () => {
   `;
 
   const renderContent = () => {
+    if (loading) {
+      return <Typography variant="body1">Loading...</Typography>;
+    }
+
     switch (selectedCategory) {
       case 'Manage Profile':
         return <ManageProfile />;
@@ -100,81 +127,54 @@ const SellerDb = () => {
         return <Contact />;
       default:
         return (
-          <Box>
-            <Box style={{ display: 'flex', justifyContent: 'center' }}>
-              <Paper elevation={5} style={{
+          <Box sx={{ padding: '20px', marginTop: '20px' }}>
+            {/* First Row */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+              <Paper elevation={5} sx={{
                 padding: '20px',
-                margin: '10px',
-                width: '45%',
                 backgroundColor: '#0074D9',
                 color: '#ffffff',
+                width: 'calc(50% - 10px)', // 50% width with spacing between
+                marginRight: '10px', // Space between the two papers
               }}>
                 <Typography variant="h6" gutterBottom>All Deals</Typography>
-                <Typography variant="body1">Content for managing deals...</Typography>
+                <Typography variant="h4">{dealDone !== null ? dealDone : 'No successful deals yet.'}</Typography>
               </Paper>
-
-              <Paper elevation={5} style={{
+              
+              <Paper elevation={5} sx={{
                 padding: '20px',
-                margin: '10px',
-                width: '45%',
                 backgroundColor: '#2ECC40',
                 color: '#ffffff',
+                width: 'calc(50% - 10px)', // 50% width with spacing between
+                marginLeft: '10px', // Space between the two papers
               }}>
                 <Typography variant="h6" gutterBottom>Successful Deals</Typography>
-                <Typography variant="body1">Content for successful deals...</Typography>
+                <Typography variant="h4">{dealDone !== null ? dealDone : 'No successful deals yet.'}</Typography>
               </Paper>
             </Box>
-
-            <Box style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
-              <Paper elevation={5} style={{
+      
+            {/* Second Row */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+              <Paper elevation={5} sx={{
                 padding: '20px',
-                margin: '10px',
-                width: '45%',
-                backgroundColor: '#FF4136',
-                color: '#ffffff',
-              }}>
-                <Typography variant="h6" gutterBottom>Unsuccessful Deals</Typography>
-                <Typography variant="body1">Content for unsuccessful deals...</Typography>
-              </Paper>
-
-              <Paper elevation={5} style={{
-                padding: '20px',
-                margin: '10px',
-                width: '45%',
                 backgroundColor: '#FF851B',
                 color: '#ffffff',
+                width: 'calc(50% - 10px)', // 50% width with spacing between
+                marginRight: '10px', // Space between the two papers
               }}>
                 <Typography variant="h6" gutterBottom>User Level</Typography>
-                <Typography variant="body1">Content for user level...</Typography>
+                <Typography variant="h4">Content for user level...</Typography>
               </Paper>
-            </Box>
-
-            <Box style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
-              <Paper elevation={5} style={{
+      
+              <Paper elevation={5} sx={{
                 padding: '20px',
-                margin: '10px',
-                width: '45%',
-                backgroundColor: '#FFDC00',
-                color: '#000000'
-              }}>
-                <Typography variant="h6" gutterBottom>Transaction History</Typography>
-                <Typography variant="body1">Content for transaction history...</Typography>
-              </Paper>
-
-              <Paper elevation={5} style={{
-                padding: '20px',
-                margin: '10px',
-                width: '45%',
                 backgroundColor: '#3f51b5',
-                color: '#ffffff'
+                color: '#ffffff',
+                width: 'calc(50% - 10px)', // 50% width with spacing between
+                marginLeft: '10px', // Space between the two papers
               }}>
-                <Typography variant="h4" gutterBottom>Rep+ Counter</Typography>
-                {repPlus !== null ? (
-                  <Typography variant="h4">{repPlus}</Typography>
-                ) : (
-                  <Typography variant="body1">Loading repPlus count...</Typography>
-                )}
-
+                <Typography variant="h6" gutterBottom>Rep+ Counter</Typography>
+                <Typography variant="h4" gutterBottom>{repPlus !== null ? repPlus : 'Loading repPlus count...'}</Typography>
               </Paper>
             </Box>
           </Box>
