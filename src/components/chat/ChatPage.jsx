@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { TextField, Button, IconButton, Box, Paper, Typography, List, ListItem, ListItemText, Avatar, Drawer, ListSubheader, ListItemButton, ListItemIcon, ListItemText as MuiListItemText } from '@mui/material';
-import SendIcon from '@mui/icons-material/Send';
-import { collection, getDoc,setDoc,limit,query, orderBy, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp,getDocs,writeBatch } from 'firebase/firestore';
+import { collection, getDoc,query, orderBy, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp,writeBatch } from 'firebase/firestore';
 import { firestore } from '../../utils/FireBaseConfig/fireBaseConfig';
 import { useAuth } from '../../utils/Auth/AuthContext';
 import { toast } from 'react-toastify';
@@ -254,11 +253,11 @@ const ChatPage = ({ roomId }) => {
 
       if (!buyerDocSnap.exists()) {
         // Create dashboard document for the buyer and set initial reputation
-        batch.set(buyerDocRef, { repPlus: 1 });
+        batch.set(buyerDocRef, { repPlus:25});
         console.log(`Buyer ${buyerId} reputation updated.`);
       } else {
         // Increment repPlus if buyerDoc exists
-        const newRepPlus = (buyerDocSnap.data().repPlus || 0) + 1;
+        const newRepPlus = (buyerDocSnap.data().repPlus || 0) + 25;
         batch.update(buyerDocRef, { repPlus: newRepPlus });
         console.log(`Buyer ${buyerId} reputation incremented to ${newRepPlus}.`);
       }
