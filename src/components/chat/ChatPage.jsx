@@ -13,8 +13,8 @@ import CheckIcon from '@mui/icons-material/Check';
 // Import background images for additional themes
 import WhatsAppBackground from '../../resources/Chats-theme/1.jpg';
 import TwitterBackground from '../../resources/Chats-theme/2.jpg';
-import SnapchatBackground from '../../resources/Chats-theme/1.jpg';
-import TelegramBackground from '../../resources/Chats-theme/2.jpg';
+import SnapchatBackground from '../../resources/Chats-theme/3.jpg';
+import TelegramBackground from '../../resources/Chats-theme/4.jpg';
 
 const ChatPage = ({ roomId }) => {
   const { currentUser } = useAuth();
@@ -148,7 +148,7 @@ const ChatPage = ({ roomId }) => {
         };
       case 'instagram':
         return {
-          backgroundColor: '#f09433',
+          backgroundColor: '#800080 ',
           color: '#fff',
         };
       case 'messenger':
@@ -306,13 +306,13 @@ const ChatPage = ({ roomId }) => {
               <ListItemIcon>
                 {theme === 'instagram' && <CheckIcon />}
               </ListItemIcon>
-              <MuiListItemText primary="Instagram Theme" />
+              <MuiListItemText primary="Purple Theme" />
             </ListItemButton>
             <ListItemButton selected={theme === 'messenger'} onClick={() => handleChangeTheme('messenger')}>
               <ListItemIcon>
                 {theme === 'messenger' && <CheckIcon />}
               </ListItemIcon>
-              <MuiListItemText primary="Messenger Theme" />
+              <MuiListItemText primary="SkyBlue Theme" />
             </ListItemButton>
             {/* Additional inner chat themes */}
             <ListSubheader>Chat Themes</ListSubheader>
@@ -320,25 +320,25 @@ const ChatPage = ({ roomId }) => {
               <ListItemIcon>
                 {innerTheme === 'whatsapp' && <CheckIcon />}
               </ListItemIcon>
-              <MuiListItemText primary="WhatsApp" />
+              <MuiListItemText primary="Orange Box" />
             </ListItemButton>
             <ListItemButton selected={innerTheme === 'twitter'} onClick={() => handleChangeInnerTheme('twitter')}>
               <ListItemIcon>
                 {innerTheme === 'twitter' && <CheckIcon />}
               </ListItemIcon>
-              <MuiListItemText primary="Twitter" />
+              <MuiListItemText primary="Space" />
             </ListItemButton>
             <ListItemButton selected={innerTheme === 'snapchat'} onClick={() => handleChangeInnerTheme('snapchat')}>
               <ListItemIcon>
                 {innerTheme === 'snapchat' && <CheckIcon />}
               </ListItemIcon>
-              <MuiListItemText primary="Snapchat" />
+              <MuiListItemText primary="Mountain" />
             </ListItemButton>
             <ListItemButton selected={innerTheme === 'telegram'} onClick={() => handleChangeInnerTheme('telegram')}>
               <ListItemIcon>
                 {innerTheme === 'telegram' && <CheckIcon />}
               </ListItemIcon>
-              <MuiListItemText primary="Telegram" />
+              <MuiListItemText primary="Moon" />
             </ListItemButton>
           </List>
         </Box>
