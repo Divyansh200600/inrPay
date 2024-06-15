@@ -348,4 +348,3 @@ const ChatPage = ({ roomId }) => {
 };
 
 export default ChatPage;
-
