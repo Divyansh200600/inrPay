@@ -49,31 +49,35 @@ const ManageDeal = () => {
         return;
       }
   
+      // Fetch the current highest chat room ID
+      const chatRoomsRef = collection(firestore, 'chatRooms');
+      const chatRoomsSnapshot = await getDocs(chatRoomsRef);
+      const chatRoomCount = chatRoomsSnapshot.size;
+      const newChatRoomId = `chat-${String(chatRoomCount + 1).padStart(2, '0')}`;
+  
       toast.success(`Proposal ${proposal.id} accepted.`);
   
       // Create a new chat room document
-      const chatRoomRef = collection(firestore, 'chatRooms');
-      const newChatRoomDoc = await addDoc(chatRoomRef, {
+      const newChatRoomDoc = await addDoc(chatRoomsRef, {
+        chatRoomId: newChatRoomId,
         buyerId: proposal.buyerId,
         sellerId: currentUser.uid,
         createdAt: serverTimestamp(),
       });
   
-      const chatRoomId = newChatRoomDoc.id;
-  
       // Update buyer's proposal document with chatRoomId
       const buyerProposalDocRef = doc(firestore, `users/${proposal.buyerId}/proposals`, proposal.id);
-      await updateDoc(buyerProposalDocRef, { chatRoomId });
+      await updateDoc(buyerProposalDocRef, { chatRoomId: newChatRoomId });
   
       // Update seller's proposal document with chatRoomId
       const sellerProposalDocRef = doc(firestore, `users/${currentUser.uid}/proposals`, proposal.id);
-      await updateDoc(sellerProposalDocRef, { chatRoomId });
+      await updateDoc(sellerProposalDocRef, { chatRoomId: newChatRoomId });
   
       // Update active chat rooms state
       setActiveChatRooms((prevRooms) => [
         ...prevRooms,
         {
-          id: chatRoomId,
+          id: newChatRoomId,
           buyerId: proposal.buyerId,
           sellerId: currentUser.uid,
         },
@@ -83,7 +87,6 @@ const ManageDeal = () => {
       toast.error(`Error accepting proposal: ${error.message}`);
     }
   };
-  
 
   const handleReject = async (proposal) => {
     try {
@@ -160,7 +163,6 @@ const ManageDeal = () => {
                   </Grid>
                 </Paper>
               </Box>
-
             ))
           ) : (
             <ListItem>

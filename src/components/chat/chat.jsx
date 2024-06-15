@@ -2,14 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { firestore } from '../../utils/FireBaseConfig/fireBaseConfig';
 import { useAuth } from '../../utils/Auth/AuthContext';
-import { Box, Typography, List, ListItem, ListItemText, Divider } from '@mui/material';
+import { Box, Typography, List, ListItem, ListItemText, Divider, CircularProgress, Avatar } from '@mui/material';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Link } from 'react-router-dom';
+import ChatPage from './ChatPage'; // Assuming ChatPage is in the same directory
 
 const Chat = () => {
   const { currentUser } = useAuth();
   const [chatRooms, setChatRooms] = useState([]);
+  const [selectedRoom, setSelectedRoom] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -47,7 +48,6 @@ const Chat = () => {
           fetchedChatRooms.push({ id: doc.id, ...data });
         });
 
-        console.log('Fetched chat rooms:', fetchedChatRooms);
         setChatRooms(fetchedChatRooms);
         setLoading(false);
       } catch (error) {
@@ -70,7 +70,11 @@ const Chat = () => {
   }
 
   if (loading) {
-    return <Typography variant="body1">Loading...</Typography>;
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    );
   }
 
   if (error) {
@@ -78,30 +82,40 @@ const Chat = () => {
   }
 
   return (
-    <Box sx={{ textAlign: 'center' }}>
-      <Typography variant="h5" gutterBottom>Chat Rooms</Typography>
-      {chatRooms.length > 0 ? (
-        <List>
-          {chatRooms.map((room) => (
-            <React.Fragment key={room.id}>
-              <ListItem button component={Link} to={`/chat/${room.id}`}>
-                <ListItemText primary={`Chat Room ID: ${room.id}`} />
-              </ListItem>
-              <Divider />
-              <ListItem>
-                <ListItemText primary={`Buyer ID: ${room.buyerId}`} />
-              </ListItem>
-              <ListItem>
-                <ListItemText primary={`Seller ID: ${room.sellerId}`} />
-              </ListItem>
-              {/* Add more details as needed */}
-              <Divider />
-            </React.Fragment>
-          ))}
-        </List>
-      ) : (
-        <Typography variant="body1">No chat rooms found.</Typography>
-      )}
+    <Box sx={{ display: 'flex', height: '100vh' }}>
+      <Box sx={{ width: '30%', borderRight: '1px solid #ddd', overflowY: 'auto' }}>
+        <Typography variant="h5" gutterBottom sx={{ textAlign: 'center', margin: '16px 0' }}>
+          Chat Rooms
+        </Typography>
+        {chatRooms.length > 0 ? (
+          <List>
+            {chatRooms.map((room) => (
+              <React.Fragment key={room.id}>
+                <ListItem button onClick={() => setSelectedRoom(room.id)} sx={{ alignItems: 'center' }}>
+                  <Avatar sx={{ bgcolor: 'primary.main', marginRight: '16px' }}>
+                    {room.chatRoomId.split('-')[1]}
+                  </Avatar>
+                  <ListItemText primary={`ChatRoom NO: ${room.chatRoomId}`} />
+                </ListItem>
+                <Divider />
+              </React.Fragment>
+            ))}
+          </List>
+        ) : (
+          <Typography variant="body1" sx={{ textAlign: 'center' }}>
+            No chat rooms found.
+          </Typography>
+        )}
+      </Box>
+      <Box sx={{ width: '70%', padding: '16px' }}>
+        {selectedRoom ? (
+          <ChatPage roomId={selectedRoom} />
+        ) : (
+          <Typography variant="body1" sx={{ textAlign: 'center', marginTop: '50%' }}>
+            Select a chat room to start messaging
+          </Typography>
+        )}
+      </Box>
     </Box>
   );
 };
