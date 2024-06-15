@@ -1,20 +1,26 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { collection, query, orderBy, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { TextField, Button, IconButton, Box, Paper, Typography, List, ListItem, ListItemText, Avatar, Drawer, ListSubheader, ListItemButton, ListItemIcon, ListItemText as MuiListItemText } from '@mui/material';
+import SendIcon from '@mui/icons-material/Send';
+import { collection, getDoc,setDoc,limit,query, orderBy, onSnapshot, addDoc, deleteDoc, doc, serverTimestamp,getDocs,writeBatch } from 'firebase/firestore';
 import { firestore } from '../../utils/FireBaseConfig/fireBaseConfig';
 import { useAuth } from '../../utils/Auth/AuthContext';
-import { Box, Typography, List, ListItem, ListItemText, TextField, Button, IconButton, Avatar, Paper, Drawer, ListSubheader, ListItemButton, ListItemIcon, ListItemText as MuiListItemText } from '@mui/material';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EmojiPicker from 'emoji-picker-react';
 import SettingsIcon from '@mui/icons-material/Settings';
 import CheckIcon from '@mui/icons-material/Check';
+import ReplyIcon from '@mui/icons-material/Reply';
 
 // Import background images for additional themes
 import WhatsAppBackground from '../../resources/Chats-theme/1.jpg';
 import TwitterBackground from '../../resources/Chats-theme/2.jpg';
 import SnapchatBackground from '../../resources/Chats-theme/3.jpg';
 import TelegramBackground from '../../resources/Chats-theme/4.jpg';
+
+// Import sound for message send
+import sendSound from '../../resources/Sounds/sounds/send-message.mp3'; // Adjust path as needed
+import { Howl } from 'howler'; // Import Howl from howler
 
 const ChatPage = ({ roomId }) => {
   const { currentUser } = useAuth();
@@ -23,17 +29,28 @@ const ChatPage = ({ roomId }) => {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [theme, setTheme] = useState(null); // Main theme for overall page
   const [innerTheme, setInnerTheme] = useState(null); // Inner theme for chat render
+  const [mentionSuggestions, setMentionSuggestions] = useState([]); // State for mention suggestions
+  const [replyToMessage, setReplyToMessage] = useState(null); // State to store the message being replied to
   const messageEndRef = useRef(null);
   const inputRef = useRef(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const audioRef = useRef(null); // Reference to the audio element
+  const [repPlusGiven, setRepPlusGiven] = useState(false);
+
+  useEffect(() => {
+    audioRef.current = new Howl({
+      src: [sendSound],
+      volume: 0.5, // Adjust volume as needed
+    });
+  }, []);
 
   useEffect(() => {
     const fetchMessages = () => {
       if (!roomId) return;
-
+  
       const messagesRef = collection(firestore, `chatRooms/${roomId}/messages`);
       const q = query(messagesRef, orderBy('timestamp', 'asc'));
-
+  
       const unsubscribe = onSnapshot(q, (snapshot) => {
         let fetchedMessages = [];
         snapshot.forEach((doc) => {
@@ -41,16 +58,35 @@ const ChatPage = ({ roomId }) => {
           fetchedMessages.push({ id: doc.id, ...data });
         });
         setMessages(fetchedMessages);
-
+  
         // Automatically scroll to the bottom when new messages arrive
         messageEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  
+        // Log buyerId and sellerId for each message
+        fetchedMessages.forEach((message) => {
+          const isCurrentUserSender = message.senderId === currentUser.uid;
+          const buyerId = isCurrentUserSender ? currentUser.uid : message.senderId;
+          const sellerId = isCurrentUserSender ? message.senderId : currentUser.uid;
+  
+          console.log(`Buyer ID: ${buyerId}, Seller ID: ${sellerId}`);
+        });
       });
-
+  
       return unsubscribe;
     };
+  
+    fetchMessages(); // Fetch messages when roomId changes
+  
+  }, [roomId, currentUser]); // Ensure useEffect dependencies are set correctly
+   // Ensure useEffect dependencies are set correctly
+  
 
-    fetchMessages();
-  }, [roomId]);
+  // Function to play the send sound
+  const playSendSound = () => {
+    if (audioRef.current) {
+      audioRef.current.play(); // Play the audio element
+    }
+  };
 
   const handleSendMessage = async () => {
     try {
@@ -66,6 +102,9 @@ const ChatPage = ({ roomId }) => {
 
       setNewMessage('');
       setShowEmojiPicker(false);
+
+      // Play send sound effect
+      playSendSound();
     } catch (error) {
       console.error('Error sending message:', error);
       toast.error(`Error sending message: ${error.message}`);
@@ -161,6 +200,33 @@ const ChatPage = ({ roomId }) => {
     }
   };
 
+  const handleReplyMessage = (message) => {
+    setReplyToMessage(message);
+    // Optionally, you can add logic to auto-populate the message input with some content like:
+    // setNewMessage(`@${message.senderId} `);
+    inputRef.current.focus(); // Focus on the input field after initiating a reply
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && e.shiftKey) {
+      e.preventDefault();
+      const currentCursorPosition = e.target.selectionStart;
+      const newMessageText = `${newMessage.slice(0, currentCursorPosition)}\n${newMessage.slice(currentCursorPosition)}`;
+      setNewMessage(newMessageText);
+    } else if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+
+    // Detect '@' symbol to trigger mention suggestions
+    if (e.key === '@') {
+      // Implement logic to fetch and display mention suggestions
+      // For simplicity, I'll set a sample list here
+      const sampleSuggestions = ['Alice', 'Bob', 'Charlie', 'David'];
+      setMentionSuggestions(sampleSuggestions);
+    }
+  };
+
   if (!currentUser) {
     return (
       <Typography variant="body1" color="error">
@@ -169,6 +235,49 @@ const ChatPage = ({ roomId }) => {
     );
   }
 
+  const handleRepPlus = async () => {
+    try {
+      if (!roomId || !currentUser) return;
+
+      // Determine buyerId (current user's ID)
+      const buyerId = currentUser.uid;
+
+      // Fetch the latest message to determine the sellerId (if needed)
+      // Replace this with your actual logic to fetch sellerId
+      let sellerId = ''; // Replace with actual sellerId logic if needed
+
+      // Update buyer's dashboard with repPlus count
+      const buyerDocRef = doc(firestore, `dashBoard/${buyerId}`);
+      const buyerDocSnap = await getDoc(buyerDocRef);
+
+      const batch = writeBatch(firestore);
+
+      if (!buyerDocSnap.exists()) {
+        // Create dashboard document for the buyer and set initial reputation
+        batch.set(buyerDocRef, { repPlus: 1 });
+        console.log(`Buyer ${buyerId} reputation updated.`);
+      } else {
+        // Increment repPlus if buyerDoc exists
+        const newRepPlus = (buyerDocSnap.data().repPlus || 0) + 1;
+        batch.update(buyerDocRef, { repPlus: newRepPlus });
+        console.log(`Buyer ${buyerId} reputation incremented to ${newRepPlus}.`);
+      }
+
+      // Commit the batch write
+      await batch.commit();
+
+      // Update state to hide the Rep+ button
+      setRepPlusGiven(true);
+
+      // Provide feedback to the user
+      toast.success('Rep+ given successfully!');
+
+    } catch (error) {
+      console.error('Error giving rep+:', error);
+      toast.error(`Error giving rep+: ${error.message}`);
+    }
+  };
+  
   return (
     <Box
       sx={{
@@ -198,12 +307,18 @@ const ChatPage = ({ roomId }) => {
           ...getChatContainerStyle(), // Apply dynamic styles based on inner theme
         }}
       >
-        <List sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <List sx={{
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '10px'
+        }}>
           {messages.map((message) => (
             <ListItem
               key={message.id}
               sx={{
                 justifyContent: message.senderId === currentUser.uid ? 'flex-end' : 'flex-start',
+                marginBottom: '10px'
               }}
             >
               <Paper
@@ -215,7 +330,8 @@ const ChatPage = ({ roomId }) => {
                   backgroundColor: message.senderId === currentUser.uid ? '#DCF8C6' : '#FFF',
                 }}
               >
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                {/* Message header with sender avatar and reply button */}
+                <Box sx={{ display: 'flex', alignItems: 'center', marginBottom: '5px' }}>
                   <Avatar sx={{ bgcolor: message.senderId === currentUser.uid ? '#388E3C' : '#1976D2', marginRight: '10px' }}>
                     {message.senderId === currentUser.uid ? 'You' : message.senderId.charAt(0)}
                   </Avatar>
@@ -224,11 +340,17 @@ const ChatPage = ({ roomId }) => {
                     secondary={message.senderId === currentUser.uid ? 'You' : message.senderId}
                     primaryTypographyProps={{ sx: { wordBreak: 'break-word' } }}
                   />
+                  {/* Reply button */}
+                  <IconButton onClick={() => handleReplyMessage(message)} sx={{ marginLeft: 'auto' }}>
+                    <ReplyIcon />
+                  </IconButton>
+                  {/* Seen indicator */}
                   {message.senderId !== currentUser.uid && message.seen && (
                     <Typography variant="caption" color="textSecondary" sx={{ marginLeft: '5px' }}>
                       ✓✓
                     </Typography>
                   )}
+                  {/* Delete button (visible for sender only) */}
                   {message.senderId === currentUser.uid && (
                     <IconButton
                       edge="end"
@@ -240,12 +362,34 @@ const ChatPage = ({ roomId }) => {
                     </IconButton>
                   )}
                 </Box>
+                {/* Display replied message if available */}
+                {replyToMessage && replyToMessage.id === message.id && (
+                  <Paper elevation={1} sx={{ backgroundColor: '#f0f0f0', padding: '5px', borderRadius: '5px', marginBottom: '5px' }}>
+                    <Typography variant="caption" sx={{ fontStyle: 'italic' }}>
+                      Replying to {message.senderId === currentUser.uid ? 'your message' : message.senderId}
+                    </Typography>
+                    <Typography variant="body2">
+                      {replyToMessage.content}
+                    </Typography>
+                  </Paper>
+                )}
               </Paper>
             </ListItem>
           ))}
           <div ref={messageEndRef} />
         </List>
       </Paper>
+ {/* Rep+ button */}
+ {!repPlusGiven && (
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
+          <Button variant="contained" color="primary" onClick={handleRepPlus}>
+            Rep+
+          </Button>
+        </Box>
+          )}
+
+
+      {/* Input area for typing new message */}
       <Paper
         elevation={3}
         sx={{
@@ -259,32 +403,40 @@ const ChatPage = ({ roomId }) => {
           position: 'relative', // Ensure the EmojiPicker is positioned correctly
         }}
       >
+        {/* Emoji picker button */}
         <IconButton onClick={() => setShowEmojiPicker(!showEmojiPicker)} sx={{ padding: '10px' }}>
           😊
         </IconButton>
+        {/* Text input field for typing new message */}
         <TextField
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
           inputRef={inputRef}
           variant="outlined"
           fullWidth
+          multiline  // Enable multiline input
           label="Type your message"
           margin="normal"
           sx={{ marginLeft: '10px', flexGrow: 1 }}
           InputProps={{ sx: { height: '50px', padding: '10px' } }}
+          onKeyDown={handleKeyDown} // Attach handleKeyDown for handling Shift + Enter and mentions
         />
+        {/* Send message button */}
         <Button onClick={handleSendMessage} variant="contained" color="primary" sx={{ marginLeft: '10px', padding: '15px' }}>
           Send
         </Button>
+        {/* Settings button */}
         <IconButton onClick={toggleSettingsDrawer} sx={{ marginLeft: 'auto', padding: '10px' }}>
           <SettingsIcon />
         </IconButton>
       </Paper>
+      {/* Emoji picker component */}
       {showEmojiPicker && (
         <Box sx={{ position: 'absolute', bottom: '90px', right: '700px', zIndex: 1 }}>
           <EmojiPicker onEmojiClick={handleEmojiSelect} />
         </Box>
       )}
+      {/* Settings drawer */}
       <Drawer anchor="right" open={isSettingsOpen} onClose={toggleSettingsDrawer}>
         <Box sx={{ width: 250 }}>
           <List>
@@ -343,8 +495,24 @@ const ChatPage = ({ roomId }) => {
           </List>
         </Box>
       </Drawer>
+      {/* Mention suggestions */}
+      {mentionSuggestions.length > 0 && (
+        <Paper elevation={3} sx={{ position: 'absolute', top: '60px', left: '20px', zIndex: 2 }}>
+          <List sx={{ width: '100%' }}>
+            {/* Display mention suggestions */}
+            {mentionSuggestions.map((mention, index) => (
+              <ListItem key={index} button>
+                <ListItemText primary={`@${mention}`} />
+              </ListItem>
+            ))}
+          </List>
+        </Paper>
+      )}
+      {/* Audio element for send sound */}
+      <audio ref={audioRef} />
     </Box>
   );
 };
 
 export default ChatPage;
+
