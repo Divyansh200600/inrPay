@@ -6,7 +6,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useAuth } from '../../../utils/Auth/AuthContext';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-
+import verifiedImage from '../../../resources/gifs/verify.gif';
 const Verified = () => {
   const { currentUser } = useAuth();
   const [userId, setUserId] = useState('');
@@ -23,7 +23,8 @@ const Verified = () => {
   const [error, setError] = useState(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [verificationStatus, setVerificationStatus] = useState(null);
-console.log(isSubmitted);
+  const [queryReason, setQueryReason] = useState('');
+console.log(isSubmitted)
   useEffect(() => {
     if (currentUser) {
       const fetchUserId = async () => {
@@ -35,6 +36,9 @@ console.log(isSubmitted);
           if (docSnapshot.exists()) {
             const data = docSnapshot.data();
             setVerificationStatus(data.status);
+            if (data.status === 'queried') {
+              setQueryReason(data.reason);
+            }
           }
         } catch (error) {
           console.error('Error fetching user ID:', error);
@@ -109,21 +113,47 @@ console.log(isSubmitted);
   };
 
   return (
-    <Box 
-      sx={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
+    <Box
+      sx={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
         height: '100vh',
-        flexDirection: 'column' 
+        flexDirection: 'column'
       }}
     >
       <Paper elevation={3} sx={{ p: 4, width: '100%', maxWidth: 600 }}>
-        {verificationStatus === 'pending' ? (
+        {verificationStatus === 'pending' && (
           <Typography variant="h4" gutterBottom>
             Your verification status is pending.
           </Typography>
-        ) : (
+        )}
+        {verificationStatus === 'approved' && (
+          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <Typography variant="h4" gutterBottom>
+              Your verification has been approved.
+            </Typography>
+            {/* Display the picture here */}
+            <img src={verifiedImage} alt="Approved" style={{ maxWidth: '100%', maxHeight: '400px', marginTop: '20px' }} />
+
+          </Box>
+        )}
+        {verificationStatus === 'rejected' && (
+          <Box>
+            <Typography variant="h4" gutterBottom>
+              Your verification has been rejected.
+            </Typography>
+            <Button variant="contained" color="primary" onClick={() => setVerificationStatus(null)}>
+              Send Again
+            </Button>
+          </Box>
+        )}
+        {verificationStatus === 'queried' && (
+          <Typography variant="h4" gutterBottom>
+            Your verification has been queried. Reason: {queryReason}
+          </Typography>
+        )}
+        {!verificationStatus && (
           <Box component="form" onSubmit={handleSubmit}>
             <Typography variant="h4" gutterBottom>
               Verification Form
@@ -162,36 +192,45 @@ console.log(isSubmitted);
               margin="normal"
             />
             <TextField
-              label="Seller's Limit (USD)"
-              name="limit"
+              label="Seller's Limit ($)"
+              name="limit" // Update label to "$"
               value={formData.limit}
               onChange={handleChange}
               fullWidth
               margin="normal"
             />
+           
             <Box mt={2}>
-              <Typography variant="h6">Upload Documents</Typography>
-              <input
-                type="file"
-                name="aadhar"
-                onChange={handleFileChange}
-                accept=".pdf,.jpg,.jpeg,.png"
-                style={{ marginTop: '10px' }}
-              />
-              <input
-                type="file"
-                name="pan"
-                onChange={handleFileChange}
-                accept=".pdf,.jpg,.jpeg,.png"
-                style={{ marginTop: '10px' }}
-              />
-              <input
-                type="file"
-                name="photo"
-                onChange={handleFileChange}
-                accept=".jpg,.jpeg,.png"
-                style={{ marginTop: '10px' }}
-              />
+              <Button variant="contained" color="primary" component="label">
+                Upload Aadhar
+                <input
+                  type="file"
+                  name="aadhar"
+                  onChange={handleFileChange}
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  style={{ display: 'none' }}
+                />
+              </Button>
+              <Button variant="contained" color="primary" component="label" style={{ marginLeft: '10px' }}>
+                Upload PAN
+                <input
+                  type="file"
+                  name="pan"
+                  onChange={handleFileChange}
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  style={{ display: 'none' }}
+                />
+              </Button>
+              <Button variant="contained" color="primary" component="label" style={{ marginLeft: '10px' }}>
+                Upload Photo
+                <input
+                  type="file"
+                  name="photo"
+                  onChange={handleFileChange}
+                  accept=".jpg,.jpeg,.png"
+                  style={{ display: 'none' }}
+                />
+              </Button>
             </Box>
             <Button variant="contained" color="primary" type="submit" sx={{ mt: 3 }}>
               Submit

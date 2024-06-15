@@ -21,4 +21,7 @@ const auth = getAuth();
 const firestore = getFirestore(app);
 const storage = getStorage(app);
 
-export { app, auth, firestore, storage };
+// Create 'db' instance directly from 'firestore'
+const db = firestore;
+
+export { app, auth, firestore, storage, db };

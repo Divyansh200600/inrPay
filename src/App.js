@@ -1,13 +1,14 @@
-// src/App.js
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./utils/Auth/AuthContext";
 import LoginForm from "./pages/LoginFormPage/loginFormPage";
 import BuyerDbPage from "./pages/BuyerDbPage/buyerDbPage";
 import SellerDbPage from "./pages/SellerDbPage/sellerDbPage";
-import ProtectedRoute from "./utils/ProtectedRoute/ProtectedRoute";
 import AdminPage from "./pages/Admin/adminPage";
- import ProfilePage from "./pages/BuyerDetailsPage/profilePage";
+import Chat from "./components/chat/chat"; // Import Chat component
+import ChatPage from "./components/chat/ChatPage"; // Import ChatPage component
+import ProtectedRoute from "./utils/ProtectedRoute/ProtectedRoute";
+import ProfilePage from "./pages/BuyerDetailsPage/profilePage";
 const AppRoutes = () => {
   const { isLoggedIn, userType } = useAuth();
 
@@ -26,15 +27,7 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
-
-<Route
-        path="/profile/:userId/*"
-        element={
-          <ProtectedRoute allowedRoles={["buyer"]}>
-            <ProfilePage />
-          </ProtectedRoute>
-        }
-      />
+      <Route path="/profile/:uid" element={<ProfilePage />} />
       <Route
         path="/seller/*"
         element={
@@ -43,7 +36,7 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
-       <Route
+      <Route
         path="/admin/*"
         element={
           <ProtectedRoute allowedRoles={["admin"]}>
@@ -51,10 +44,9 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
-
- 
+      <Route path="/chat" element={<Chat />} /> {/* Route for displaying chat rooms */}
+      <Route path="/chat/:roomId" element={<ChatPage />} /> {/* Route for individual chat room */}
     </Routes>
-    
   );
 };
 
