@@ -445,23 +445,22 @@ const ChatPage = ({ roomId }) => {
           <div ref={messageEndRef} />
         </List>
       </Paper>
- {/* Rep+ button */}
- {!repPlusGiven && (
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
-          <Button variant="contained" color="primary" onClick={handleRepPlus}>
-            Rep+
-          </Button>
-        </Box>
-          )}
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
+  {/* Rep+ button */}
+  {!repPlusGiven && (
+    <Button variant="contained" color="primary" onClick={handleRepPlus}>
+      Rep+
+    </Button>
+  )}
 
-          {/* Deal Close button */}
- {!repPlusGiven && (
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', marginTop: '10px' }}>
-          <Button variant="contained" color="primary" onClick={handleDealClose}>
-           Deal Close
-          </Button>
-        </Box>
-          )}
+  {/* Deal Close button */}
+  {repPlusGiven && (
+    <Button variant="contained" color="primary" onClick={handleDealClose}>
+      Deal Close
+    </Button>
+  )}
+</Box>
+
 
 
       {/* Input area for typing new message */}
